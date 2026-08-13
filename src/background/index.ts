@@ -40,7 +40,9 @@ import {
   registerMenuRefreshTriggers,
 } from "./context-menu";
 import { fillActiveTab, fillTab } from "./autofill-fill";
+import { getCipher } from "@/core/vault/vault-repository";
 import { commitSave, handleSaveDetected } from "./save-detection";
+import { pickShortcutTarget } from "./shortcut";
 
 /**
  * 背景 service worker。
@@ -310,8 +312,10 @@ api().commands.onCommand.addListener((command) => {
 
   if (command === "autofill_login") {
     void (async () => {
-      // Ctrl+Shift+L：填充上次使用的登录项；没有记录或已失效时，
-      // 回退到当前站点匹配的第一条（收藏优先）。
+      // Ctrl+Shift+L：填充「上次使用且匹配当前站点」的登录项；
+      // 没有这样的记录时回退到当前站点匹配的第一条（收藏优先）。
+      // 关键约束：自动触发的填充没有用户确认，条目必须匹配当前站点，
+      // 否则等于把别的站的密码填进当前页——那正是钓鱼页面想要的结果。
       if ((await getStatus(vaultStorage)) !== VaultStatus.Unlocked) {
         return;
       }
@@ -322,17 +326,13 @@ api().commands.onCommand.addListener((command) => {
       }
 
       const lastUsedId = await getLastUsedLogin(vaultStorage);
-      if (lastUsedId != null) {
-        const result = await fillActiveTab(vaultStorage, lastUsedId);
-        if (result.ok) {
-          return;
-        }
-      }
-
+      const lastUsed =
+        lastUsedId == null ? undefined : await getCipher(vaultStorage, lastUsedId);
       const matches = await findMatchingLoginCiphers(vaultStorage, tab.url);
-      const fallback = matches[0];
-      if (fallback != null) {
-        await fillTab(vaultStorage, fallback.id, tab);
+      const target = pickShortcutTarget(tab.url, lastUsed, matches);
+
+      if (target != null) {
+        await fillTab(vaultStorage, target.id, tab);
       }
     })();
   }

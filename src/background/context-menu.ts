@@ -2,6 +2,7 @@ import type { VaultStorage } from "@/core/state/storage.port";
 import { VaultStatus } from "@/core/state/vault-status";
 import { decryptCipher } from "@/core/vault/cipher-encryption";
 import { cipherMatchesUrl } from "@/core/vault/uri-matching";
+import type { CipherView } from "@/core/vault/models";
 import { getStatus, readVaultData, requireUserKey } from "@/core/vault/vault.service";
 import { api, runtime, t } from "@/platform/browser-api";
 import { logger } from "@/platform/logger";
@@ -71,8 +72,9 @@ async function doRefresh(storage: VaultStorage): Promise<void> {
 
       for (const cipher of matches) {
         const title = cipher.name.slice(0, 32);
+        const id = cipher.id;
         await api().contextMenus.create({
-          id: `${MENU_FILL_PREFIX}${cipher.id}`,
+          id: `${MENU_FILL_PREFIX}${id}`,
           parentId: MENU_ROOT_ID,
           title,
         });
@@ -100,7 +102,7 @@ async function createRootMenu(): Promise<void> {
 export async function findMatchingLoginCiphers(
   storage: VaultStorage,
   url: string | undefined,
-): Promise<{ id: string; name: string }[]> {
+): Promise<CipherView[]> {
   if (url == null || !/^https?:/i.test(url)) {
     return [];
   }
@@ -108,7 +110,7 @@ export async function findMatchingLoginCiphers(
   const userKey = await requireUserKey(storage);
   const data = await readVaultData(storage);
 
-  const matches: { id: string; name: string; favorite: boolean }[] = [];
+  const matches: CipherView[] = [];
 
   for (const encrypted of data.ciphers) {
     if (encrypted.deletedDate != null || encrypted.type !== 1) {
@@ -116,7 +118,7 @@ export async function findMatchingLoginCiphers(
     }
     const cipher = await decryptCipher(encrypted, userKey);
     if (cipherMatchesUrl(cipher, url)) {
-      matches.push({ id: cipher.id, name: cipher.name, favorite: cipher.favorite });
+      matches.push(cipher);
     }
   }
 
