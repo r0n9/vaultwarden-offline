@@ -1,6 +1,13 @@
-import { buildLoginFillScript } from "@/core/autofill/fill-script";
+import {
+  buildCardFillScript,
+  buildIdentityFillScript,
+  buildLoginFillScript,
+  type FillScript,
+} from "@/core/autofill/fill-script";
 import type { AutofillPageDetails } from "@/core/autofill/models";
 import type { VaultStorage } from "@/core/state/storage.port";
+import { CipherType } from "@/core/vault/enums";
+import type { CipherView } from "@/core/vault/models";
 import { cipherMatchesUrl } from "@/core/vault/uri-matching";
 import { getCipher } from "@/core/vault/vault-repository";
 import { api } from "@/platform/browser-api";
@@ -32,13 +39,12 @@ export async function fillActiveTab(
     return { ok: false, message: "条目不存在", filled: 0 };
   }
 
-  const credentials = {
-    username: cipher.login?.username,
-    password: cipher.login?.password,
-  };
-
-  if ((credentials.username ?? "") === "" && (credentials.password ?? "") === "") {
-    return { ok: false, message: "该条目没有可填充的用户名或密码", filled: 0 };
+  if (!isFillableType(cipher.type)) {
+    return {
+      ok: false,
+      message: "该条目类型暂不支持自动填充（目前支持登录、银行卡、身份）",
+      filled: 0,
+    };
   }
 
   // 条目与当前站点不匹配时照填不误——是用户主动选的这一条——但要如实告知，
@@ -54,7 +60,7 @@ export async function fillActiveTab(
       continue;
     }
 
-    const script = buildLoginFillScript(frame.details as AutofillPageDetails, credentials);
+    const script = buildScriptForCipher(cipher, frame.details as AutofillPageDetails);
     if (script.actions.length === 0) {
       continue;
     }
@@ -92,11 +98,34 @@ export async function fillActiveTab(
   if (filled === 0) {
     return {
       ok: false,
-      message: "当前页面没有找到可填充的登录字段",
+      message: "当前页面没有找到与该条目匹配的可填充字段",
       filled: 0,
       urlMatches,
     };
   }
 
   return { ok: true, filled, frames: targetedFrames, urlMatches };
+}
+
+function isFillableType(type: number): boolean {
+  return (
+    type === CipherType.Login || type === CipherType.Card || type === CipherType.Identity
+  );
+}
+
+/** 按条目类型分派到对应的脚本生成器。 */
+function buildScriptForCipher(cipher: CipherView, details: AutofillPageDetails): FillScript {
+  switch (cipher.type) {
+    case CipherType.Card:
+      return buildCardFillScript(details, cipher.card ?? {});
+
+    case CipherType.Identity:
+      return buildIdentityFillScript(details, cipher.identity ?? {});
+
+    default:
+      return buildLoginFillScript(details, {
+        username: cipher.login?.username,
+        password: cipher.login?.password,
+      });
+  }
 }

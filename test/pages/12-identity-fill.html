@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>12 · 身份填充</title>
+<style>body{font-family:system-ui;max-width:460px;margin:40px auto;padding:0 16px}
+label{display:block;margin:10px 0 3px;font-size:13px}
+input{width:100%;padding:8px;box-sizing:border-box}
+.two{display:flex;gap:10px}.two>div{flex:1}</style></head>
+<body>
+<h1>12 · 身份填充</h1>
+<p>没有 autocomplete，名称也不是标准词——考验词边界子串匹配（如 <code>first_name</code> 命中名）。</p>
+<form action="/profile" method="post">
+  <div class="two">
+    <div><label for="i1">名字</label><input type="text" id="i1" name="first_name"></div>
+    <div><label for="i2">姓氏</label><input type="text" id="i2" name="last_name"></div>
+  </div>
+  <label for="i3">邮箱</label><input type="email" id="i3" name="email_address">
+  <label for="i4">电话</label><input type="tel" id="i4" name="phone_number">
+  <label for="i5">公司</label><input type="text" id="i5" name="company_name">
+  <label for="i6">地址 1</label><input type="text" id="i6" name="address_line_1">
+  <label for="i7">地址 2</label><input type="text" id="i7" name="address_line_2">
+  <div class="two">
+    <div><label for="i8">城市</label><input type="text" id="i8" name="city_name"></div>
+    <div><label for="i9">邮编</label><input type="text" id="i9" name="postal_code"></div>
+  </div>
+  <button type="submit">保存</button>
+</form>
+<p><a href="index.html">← 返回索引</a></p>
+</body></html>

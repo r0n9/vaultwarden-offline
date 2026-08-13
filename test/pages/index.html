@@ -21,7 +21,9 @@ ul{padding-left:20px}li{margin:6px 0}code{background:#f1f5f9;padding:1px 5px;bor
   <li><a href="07-registration.html">07 · 注册（两个密码框）</a> —— 新密码 vs 确认密码</li>
   <li><a href="08-hidden-traps.html">08 · 隐藏与陷阱字段</a> —— 只有 2 个字段应判为可见</li>
   <li><a href="09-dynamic.html">09 · 分步登录</a> —— 密码框稍后才插入 DOM</li>
-  <li><a href="10-checkout.html">10 · 支付表单</a> —— 卡片与地址字段</li>
+  <li><a href="10-checkout.html">10 · 支付表单</a> —— 带 autocomplete 的卡片与地址字段</li>
+  <li><a href="11-card-fill.html">11 · 卡片填充</a> —— 无 autocomplete，考验关键词子串</li>
+  <li><a href="12-identity-fill.html">12 · 身份填充</a> —— 考验词边界子串匹配</li>
 </ul>
 <h2>各页的预期结果</h2>
 <ul>
@@ -32,5 +34,7 @@ ul{padding-left:20px}li{margin:6px 0}code{background:#f1f5f9;padding:1px 5px;bor
   <li>08：勾掉「显示不可见字段」时应<strong>只剩 2 个</strong>；<code>data-bwignore</code> 与 <code>type=search</code> 应完全不出现</li>
   <li>09：初始 1 个字段；点「下一步」后重新采集应变成 2 个</li>
   <li>10：8 个字段，含一个 <code>select</code></li>
+  <li>11：卡片条目应填进 持卡人/卡号/有效期月(下拉)/年/安全码</li>
+  <li>12：身份条目应填进 名/姓/邮箱/电话/公司/地址1/地址2/城市/邮编</li>
 </ul>
 </body></html>

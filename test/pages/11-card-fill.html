@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>11 · 卡片填充</title>
+<style>body{font-family:system-ui;max-width:460px;margin:40px auto;padding:0 16px}
+label{display:block;margin:10px 0 3px;font-size:13px}
+input,select{width:100%;padding:8px;box-sizing:border-box}
+.two{display:flex;gap:10px}.two>div{flex:1}</style></head>
+<body>
+<h1>11 · 卡片填充</h1>
+<p>与 10 号页的区别：<strong>没有</strong> <code>autocomplete</code> 属性，
+字段语义全靠名称与占位文字推断——考验关键词子串匹配。</p>
+<form action="/pay2" method="post">
+  <label for="n1">持卡人姓名</label>
+  <input type="text" id="n1" name="holder_name">
+  <label for="n2">卡号</label>
+  <input type="text" id="n2" name="card_number_input" maxlength="19">
+  <div class="two">
+    <div><label for="m1">有效期</label>
+      <select id="m1" name="expiry_month">
+        <option value="">月</option><option value="1">01</option><option value="12">12</option>
+      </select></div>
+    <div><label for="y1">年份</label>
+      <input type="text" id="y1" name="expiry_year" maxlength="4"></div>
+    <div><label for="c1">安全码</label>
+      <input type="text" id="c1" name="security_code" maxlength="4"></div>
+  </div>
+  <button type="submit">提交</button>
+</form>
+<p><a href="index.html">← 返回索引</a></p>
+</body></html>
