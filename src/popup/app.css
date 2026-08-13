@@ -42,7 +42,10 @@ body {
 
 body {
   width: 380px;
-  min-height: 560px;
+  /* 固定高度而非 min-height：内容超高时由内容区内部滚动，
+     底部 tab 栏因此始终可见，不会被撑出视口。 */
+  height: 560px;
+  overflow: hidden;
   background: var(--bg);
   color: var(--text);
   font-family:
@@ -56,18 +59,21 @@ body {
 #app {
   display: flex;
   flex-direction: column;
-  min-height: 560px;
+  height: 560px;
 }
 
-/* 导入导出在独立标签页里渲染，需要更多横向空间。 */
+/* 导入导出在独立标签页里渲染，高度不再固定。 */
 body.standalone {
   width: auto;
   max-width: 100%;
+  height: auto;
+  overflow: visible;
 }
 
 body.standalone #app {
   max-width: 640px;
   margin: 0 auto;
+  height: auto;
 }
 
 /* --- 表单基元：跨组件复用，故放在全局而非 Svelte 作用域样式里 --- */

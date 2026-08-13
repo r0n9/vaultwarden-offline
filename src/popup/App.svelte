@@ -219,6 +219,10 @@
 
   main {
     flex: 1;
+    /* min-height: 0 允许 flex 子项收缩，内容超高时在 main 内部滚动，
+       底部 tab 栏保持在视口底部。 */
+    min-height: 0;
+    overflow-y: auto;
     padding: 16px;
   }
 
