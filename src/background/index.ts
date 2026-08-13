@@ -32,7 +32,13 @@ import {
 import { browserVaultStorage as vaultStorage } from "@/platform/storage/browser-vault-storage";
 
 import { collectActiveTabFields } from "./autofill-collection";
+import {
+  refreshContextMenu,
+  registerContextMenu,
+  registerMenuRefreshTriggers,
+} from "./context-menu";
 import { fillActiveTab } from "./autofill-fill";
+import { commitSave, handleSaveDetected } from "./save-detection";
 
 /**
  * 背景 service worker。
@@ -65,6 +71,8 @@ async function refreshActionIcon(status: VaultStatus): Promise<void> {
 async function currentStatusAndRefresh(): Promise<VaultStatus> {
   const status = await getStatus(vaultStorage);
   await refreshActionIcon(status);
+  // 密码库状态影响右键菜单内容（锁定态只有"打开密码库"），状态一变就重建。
+  void refreshContextMenu(vaultStorage);
   return status;
 }
 
@@ -204,6 +212,11 @@ registerHandlers({
 
   "autofill:fillActiveTab": async ({ cipherId }) =>
     await fillActiveTab(vaultStorage, cipherId),
+
+  "save:detected": async ({ url, username }) =>
+    await handleSaveDetected(vaultStorage, url, username),
+
+  "save:commit": async (request) => await commitSave(vaultStorage, request),
 });
 
 // --- 生命周期与事件 -------------------------------------------------------
@@ -294,7 +307,10 @@ api().commands.onCommand.addListener((command) => {
   }
 });
 
-// SW 冷启动时同步一次状态。
+// SW 冷启动时同步一次状态与右键菜单。
 void currentStatusAndRefresh();
+registerContextMenu(vaultStorage);
+registerMenuRefreshTriggers(vaultStorage);
+void refreshContextMenu(vaultStorage);
 
 logger.info("背景 service worker 已启动");

@@ -22,7 +22,12 @@ const DIST = resolve(ROOT, "dist");
 const TARGET = process.env.TARGET ?? "chrome";
 
 /** 需要独立打包的 content script（文件名去掉扩展名）。 */
-const CONTENT_SCRIPTS = ["content-message-handler", "autofill-collector", "autofill-filler"];
+const CONTENT_SCRIPTS = [
+  "content-message-handler",
+  "autofill-collector",
+  "autofill-filler",
+  "save-detector",
+];
 
 const sharedResolve = {
   alias: { "@": resolve(ROOT, "src") },

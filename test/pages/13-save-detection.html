@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>13 · 保存检测</title>
+<style>body{font-family:system-ui;max-width:420px;margin:40px auto;padding:0 16px}
+label{display:block;margin:12px 0 4px;font-size:13px}
+input{width:100%;padding:8px;box-sizing:border-box}
+button{margin-top:16px;padding:8px 16px}</style></head>
+<body>
+<h1>13 · 保存检测</h1>
+<p>填写用户名与密码后点「提交」——页面不会跳转，插件应弹出保存提示条。</p>
+<p>验证路径：</p>
+<ul>
+  <li>点「保存密码」→ 提示条变「已保存 ✓」，去插件里能看到新条目 example.com</li>
+  <li>再填一次同样的用户名、换一个密码提交 → 应提示「更新」</li>
+  <li>点「忽略」→ 同用户名不再提示</li>
+  <li>锁定密码库后再提交 → 不提示（无法落库就不打扰）</li>
+</ul>
+<form id="f" onsubmit="event.preventDefault(); alert('表单已提交（页面未跳转）')">
+  <label for="u">用户名</label>
+  <input type="text" id="u" name="username" autocomplete="username">
+  <label for="p">密码</label>
+  <input type="password" id="p" name="password" autocomplete="current-password">
+  <button type="submit">提交</button>
+</form>
+<p><a href="index.html">← 返回索引</a></p>
+</body></html>

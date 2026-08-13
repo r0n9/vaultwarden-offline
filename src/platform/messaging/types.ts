@@ -92,6 +92,33 @@ export interface MessageContracts {
     request: { cipherId: string };
     response: AutofillFillResult;
   };
+  "save:detected": {
+    request: { url: string; username: string; password: string };
+    response: SaveDetectionResult;
+  };
+  "save:commit": {
+    request: SaveCommitRequest;
+    response: SaveCommitResult;
+  };
+}
+
+/** 页面报告了新的凭据后，背景页给出的判定。 */
+export interface SaveDetectionResult {
+  action: "save" | "update" | "none";
+  cipherId?: string;
+}
+
+export interface SaveCommitRequest {
+  mode: "save" | "update";
+  url: string;
+  username: string;
+  password: string;
+  cipherId?: string;
+}
+
+export interface SaveCommitResult {
+  ok: boolean;
+  message?: string;
 }
 
 /** 一次填充的结果。 */

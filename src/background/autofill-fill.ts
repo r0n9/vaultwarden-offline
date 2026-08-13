@@ -33,6 +33,18 @@ export async function fillActiveTab(
   if ("error" in tab) {
     return { ok: false, message: tab.error, filled: 0 };
   }
+  return await fillTab(storage, cipherId, tab);
+}
+
+/** 向指定标签页填充。右键菜单等场景的目标标签页不一定是活动页。 */
+export async function fillTab(
+  storage: VaultStorage,
+  cipherId: string,
+  tab: { id?: number; url?: string },
+): Promise<AutofillFillResult> {
+  if (tab.id == null) {
+    return { ok: false, message: "找不到目标标签页", filled: 0 };
+  }
 
   const cipher = await getCipher(storage, cipherId);
   if (cipher == null) {
@@ -49,7 +61,7 @@ export async function fillActiveTab(
 
   // 条目与当前站点不匹配时照填不误——是用户主动选的这一条——但要如实告知，
   // "把某站密码填进另一个站"正是钓鱼页面想要的结果。
-  const urlMatches = cipherMatchesUrl(cipher, tab.url);
+  const urlMatches = tab.url == null ? undefined : cipherMatchesUrl(cipher, tab.url);
 
   const frames = await collectFrames(tab.id);
   let filled = 0;
