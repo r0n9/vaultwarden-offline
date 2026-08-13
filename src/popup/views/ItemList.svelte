@@ -85,7 +85,7 @@
         </div>
       {/if}
       <button class="new-btn" onclick={() => (showTypeMenu = !showTypeMenu)}>
-        ＋ 新建
+        ＋ 新增
       </button>
     </div>
   </div>

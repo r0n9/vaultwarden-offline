@@ -121,6 +121,19 @@
     {folders}
     {activeUrl}
     onOpen={(id) => (screen = { name: "detail", id })}
-    onCreate={(type: CipherType) => (screen = { name: "edit", cipher: newCipherDraft(type) })}
+    onCreate={(type: CipherType) => {
+      // 新增条目：名称自动填当前站点域名，登录条目自动带上当前网址。
+      const draft = newCipherDraft(type);
+      if (activeUrl != null && /^https?:/i.test(activeUrl)) {
+        const hostname = extractHostname(activeUrl)?.replace(/^www\./, "");
+        if (hostname != null) {
+          draft.name = hostname;
+        }
+        if (type === CipherType.Login) {
+          draft.login = { uris: [{ uri: activeUrl }] };
+        }
+      }
+      screen = { name: "edit", cipher: draft };
+    }}
   />
 {/if}
