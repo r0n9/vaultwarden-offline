@@ -13,23 +13,25 @@ import { resolve } from "node:path";
 const OUT_DIR = resolve(import.meta.dirname, "../public/images");
 
 /**
- * 配色。bg 为垂直渐变（上 → 下）。
- *
- * 盾牌 + 钥匙孔：参考 Bitwarden（蓝底白盾）与 1Password（钥匙孔）——
- * 无字母，安全语义直接。盾 = 防护，钥匙孔 = 解锁密码库。
+ * 配色。
+ *   背景：深邃钴蓝，垂直渐变（上 → 下）。
+ *   盾牌：鲜艳翡翠青绿，**水平渐变左亮右暗**（明暗区分，模拟光源在左）。
+ *   钥匙孔：用背景的深钴蓝，与盾牌形成对比。
  */
 const THEMES = {
   normal: {
-    bgTop: [0x2f, 0x6b, 0xf3],
-    bgBottom: [0x1e, 0x3a, 0x8a],
-    shield: [0xff, 0xff, 0xff],
-    keyhole: [0x1d, 0x3a, 0x8a],
+    bgTop: [0x1e, 0x40, 0xaf],
+    bgBottom: [0x17, 0x25, 0x54],
+    shieldLight: [0x34, 0xd3, 0x99],
+    shieldDark: [0x04, 0x78, 0x57],
+    keyhole: [0x17, 0x25, 0x54],
   },
   locked: {
     bgTop: [0x64, 0x74, 0x8b],
     bgBottom: [0x47, 0x55, 0x69],
-    shield: [0xe2, 0xe8, 0xf0],
-    keyhole: [0x3f, 0x4c, 0x5e],
+    shieldLight: [0xcb, 0xd5, 0xe1],
+    shieldDark: [0x94, 0xa3, 0xb8],
+    keyhole: [0x47, 0x55, 0x69],
   },
 };
 
@@ -117,7 +119,7 @@ function distanceToSegment(px, py, ax, ay, bx, by) {
   return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
 }
 
-/** 盾牌形：上半部圆角矩形，下半部以四分之一椭圆弧收口（底部圆润，非尖点）。 */
+/** 盾牌形：上半部矩形（仅顶部两角圆、腰部直角），下半部以四分之一椭圆弧收口。 */
 function insideShield(x, y) {
   const cx = 0.5;
   const topY = 0.16;
@@ -130,20 +132,23 @@ function insideShield(x, y) {
   }
 
   if (y <= waistY) {
-    // 上半部：圆角矩形（圆角较大，观感圆润）
+    // 上半部：矩形，只有顶部两个角是圆的
     const minX = cx - halfW;
     const maxX = cx + halfW;
     if (x < minX || x > maxX) {
       return false;
     }
     const radius = 0.10;
-    const rx = Math.min(Math.max(x, minX + radius), maxX - radius);
-    const ry = Math.min(Math.max(y, topY + radius), waistY - radius);
-    return Math.hypot(x - rx, y - ry) <= radius;
+    if (y < topY + radius) {
+      // 顶部角区：以 (rx, topY+radius) 为圆心的圆弧判定
+      const rx = Math.min(Math.max(x, minX + radius), maxX - radius);
+      return Math.hypot(x - rx, y - (topY + radius)) <= radius;
+    }
+    // 腰部以下直边（无圆角）
+    return true;
   }
 
-  // 下半部：四分之一椭圆弧——宽度按 sqrt(1 - t²) 衰减，
-  // 底部形成圆弧而非直线收口的尖点。
+  // 下半部：四分之一椭圆弧收口
   const t = (y - waistY) / (bottomY - waistY);
   const width = halfW * Math.sqrt(1 - t * t);
   return Math.abs(x - cx) <= width;
@@ -195,7 +200,17 @@ function renderIcon(size, theme) {
 
           let color;
           if (insideShield(x, y)) {
-            color = insideKeyhole(x, y) ? theme.keyhole : theme.shield;
+            if (insideKeyhole(x, y)) {
+              color = theme.keyhole;
+            } else {
+              // 盾牌水平渐变：左亮右暗（光源在左）。
+              const t = Math.min(Math.max((x - 0.2) / 0.6, 0), 1);
+              color = [
+                Math.round(theme.shieldLight[0] + (theme.shieldDark[0] - theme.shieldLight[0]) * t),
+                Math.round(theme.shieldLight[1] + (theme.shieldDark[1] - theme.shieldLight[1]) * t),
+                Math.round(theme.shieldLight[2] + (theme.shieldDark[2] - theme.shieldLight[2]) * t),
+              ];
+            }
           } else {
             // 底色做垂直渐变。
             const t = Math.min(Math.max((y - 0.03) / 0.94, 0), 1);
