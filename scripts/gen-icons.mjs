@@ -13,24 +13,26 @@ import { resolve } from "node:path";
 const OUT_DIR = resolve(import.meta.dirname, "../public/images");
 
 /**
- * 配色。
- *   背景：深邃钴蓝，垂直渐变（上 → 下）。
- *   盾牌：鲜艳翡翠青绿，**水平渐变左亮右暗**（明暗区分，模拟光源在左）。
- *   钥匙孔：用背景的深钴蓝，与盾牌形成对比。
+ * 配色（按用户指定色值）。
+ *
+ *   背景：对角渐变 135deg，翡翠青绿 #00C9A7（左上）→ 钴蓝 #0047AB（右下）。
+ *         另有典雅质感版青绿 #00A896 可切换。
+ *   盾牌：银白金属感，垂直渐变 180deg，#E2E8F0（上）→ #94A3B8（下）。
+ *   钥匙孔：钴蓝 #0047AB，与背景钴蓝呼应。
  */
 const THEMES = {
   normal: {
-    bgTop: [0x1e, 0x40, 0xaf],
-    bgBottom: [0x17, 0x25, 0x54],
-    shieldLight: [0x5e, 0xea, 0xd4],
-    shieldDark: [0x10, 0xb9, 0x81],
-    keyhole: [0x17, 0x25, 0x54],
+    bgStart: [0x00, 0xc9, 0xa7],
+    bgEnd: [0x00, 0x47, 0xab],
+    shieldTop: [0xe2, 0xe8, 0xf0],
+    shieldBottom: [0x94, 0xa3, 0xb8],
+    keyhole: [0x00, 0x47, 0xab],
   },
   locked: {
-    bgTop: [0x64, 0x74, 0x8b],
-    bgBottom: [0x47, 0x55, 0x69],
-    shieldLight: [0xcb, 0xd5, 0xe1],
-    shieldDark: [0x94, 0xa3, 0xb8],
+    bgStart: [0x64, 0x74, 0x8b],
+    bgEnd: [0x47, 0x55, 0x69],
+    shieldTop: [0xcb, 0xd5, 0xe1],
+    shieldBottom: [0x94, 0xa3, 0xb8],
     keyhole: [0x47, 0x55, 0x69],
   },
 };
@@ -198,22 +200,25 @@ function renderIcon(size, theme) {
           }
           covered++;
 
+          const lerp = (a, b, t) => [
+            Math.round(a[0] + (b[0] - a[0]) * t),
+            Math.round(a[1] + (b[1] - a[1]) * t),
+            Math.round(a[2] + (b[2] - a[2]) * t),
+          ];
+
           let color;
           if (insideShield(x, y)) {
             if (insideKeyhole(x, y)) {
               color = theme.keyhole;
             } else {
-              // 盾牌左右硬分割：中间一条竖线，左亮右暗（无渐变过渡）。
-              color = x < 0.5 ? theme.shieldLight : theme.shieldDark;
+              // 盾牌：银白金属感，垂直渐变（上亮下暗，模拟金属高光）。
+              const t = Math.min(Math.max((y - 0.16) / 0.64, 0), 1);
+              color = lerp(theme.shieldTop, theme.shieldBottom, t);
             }
           } else {
-            // 底色做垂直渐变。
-            const t = Math.min(Math.max((y - 0.03) / 0.94, 0), 1);
-            color = [
-              Math.round(theme.bgTop[0] + (theme.bgBottom[0] - theme.bgTop[0]) * t),
-              Math.round(theme.bgTop[1] + (theme.bgBottom[1] - theme.bgTop[1]) * t),
-              Math.round(theme.bgTop[2] + (theme.bgBottom[2] - theme.bgTop[2]) * t),
-            ];
+            // 底色：对角渐变 135deg，左上青绿 → 右下钴蓝。
+            const t = Math.min(Math.max((x + y) / 2, 0), 1);
+            color = lerp(theme.bgStart, theme.bgEnd, t);
           }
 
           r += color[0];
