@@ -15,15 +15,14 @@ const OUT_DIR = resolve(import.meta.dirname, "../public/images");
 /**
  * 配色（按用户指定色值）。
  *
- *   背景：对角渐变 135deg，翡翠青绿 #00C9A7（左上）→ 钴蓝 #0047AB（右下）。
+ *   背景：纯钴蓝 #0047AB。
  *         另有典雅质感版青绿 #00A896 可切换。
  *   盾牌：银白金属感，垂直渐变 180deg，#E2E8F0（上）→ #94A3B8（下）。
  *   钥匙孔：钴蓝 #0047AB，与背景钴蓝呼应。
  */
 const THEMES = {
   normal: {
-    bgStart: [0x00, 0xc9, 0xa7],
-    bgEnd: [0x00, 0x47, 0xab],
+    bg: [0x00, 0x47, 0xab],
     // 盾牌翡翠青绿四档：左半（亮）外缘 → 中线，右半（暗）中线 → 外缘。
     shieldLeftOuter: [0x6e, 0xe7, 0xb7],
     shieldLeftInner: [0x10, 0xb9, 0x81],
@@ -32,8 +31,7 @@ const THEMES = {
     keyhole: [0x00, 0x47, 0xab],
   },
   locked: {
-    bgStart: [0x64, 0x74, 0x8b],
-    bgEnd: [0x47, 0x55, 0x69],
+    bg: [0x47, 0x55, 0x69],
     shieldLeftOuter: [0xe2, 0xe8, 0xf0],
     shieldLeftInner: [0xcb, 0xd5, 0xe1],
     shieldRightInner: [0x94, 0xa3, 0xb8],
@@ -226,9 +224,8 @@ function renderIcon(size, theme) {
               color = lerp(theme.shieldRightInner, theme.shieldRightOuter, t);
             }
           } else {
-            // 底色：对角渐变 135deg，左上青绿 → 右下钴蓝。
-            const t = Math.min(Math.max((x + y) / 2, 0), 1);
-            color = lerp(theme.bgStart, theme.bgEnd, t);
+            // 底色：纯钴蓝。
+            color = theme.bg;
           }
 
           r += color[0];
