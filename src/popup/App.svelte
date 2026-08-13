@@ -1,22 +1,39 @@
 <script lang="ts">
   import { VaultStatus } from "@/core/state/vault-status";
+  import type { FolderView } from "@/core/vault/models";
+  import { loadVault } from "@/core/vault/vault-repository";
   import { runtime, t } from "@/platform/browser-api";
   import { sendMessage } from "@/platform/messaging";
   import type { VaultSummary } from "@/platform/messaging/types";
+  import { browserVaultStorage as storage } from "@/platform/storage/browser-vault-storage";
 
   import CreateVault from "./views/CreateVault.svelte";
   import ExportVault from "./views/ExportVault.svelte";
+  import GeneratorView from "./views/GeneratorView.svelte";
   import ImportVault from "./views/ImportVault.svelte";
   import UnlockVault from "./views/UnlockVault.svelte";
+  import VaultSettings from "./views/VaultSettings.svelte";
   import VaultShell from "./views/VaultShell.svelte";
   import { connectToBackground } from "./lib/background-port";
   import { currentView, isStandalone } from "./lib/navigation";
+
+  /** 解锁态底部 tab，参考 Bitwarden 的 Vault / Generator / Settings 布局。 */
+  type Tab = "vault" | "generator" | "settings";
 
   const view = currentView();
   const standalone = isStandalone();
 
   let summary = $state<VaultSummary | null>(null);
   let version = $state("");
+  let tab = $state<Tab>("vault");
+
+  // Settings tab 的数据在 App 层维护（VaultShell 与 VaultSettings 各自持有）。
+  let settingsFolders = $state<FolderView[]>([]);
+  let settingsLoadMs = $state(0);
+  let settingsLoading = $state(false);
+
+  // 「检测当前页面字段」在 Settings tab 里，跳转到 Vault tab 的采集屏。
+  let collectRequest = $state(0);
 
   async function refresh() {
     summary = (await sendMessage("vault:getSummary")) ?? null;
@@ -25,13 +42,35 @@
   $effect(() => {
     version = runtime.getManifest().version;
     if (standalone) {
-      // 独立标签页要宽一些，380px 放不下导入向导。
       document.body.classList.add("standalone");
     } else {
       connectToBackground();
     }
     void refresh();
   });
+
+  // 切到 Settings tab 时刷新文件夹数据（解密全部条目约几十毫秒）。
+  $effect(() => {
+    if (tab !== "settings" || summary?.status !== VaultStatus.Unlocked) {
+      return;
+    }
+    settingsLoading = true;
+    void (async () => {
+      try {
+        const started = performance.now();
+        const snapshot = await loadVault(storage);
+        settingsLoadMs = performance.now() - started;
+        settingsFolders = snapshot.folders;
+      } finally {
+        settingsLoading = false;
+      }
+    })();
+  });
+
+  function openCollect() {
+    tab = "vault";
+    collectRequest += 1;
+  }
 </script>
 
 <header>
@@ -39,14 +78,29 @@
     <img class="mark" src={runtime.getURL("images/icon38.png")} alt="" />
     <span class="title">{t("appName")}</span>
   </div>
-  <span class="badge" title="本扩展不发起任何网络请求">{t("offlineBadge")}</span>
+  <div class="head-right">
+    <a
+      class="github"
+      href="https://github.com/r0n9/vaultwarden-offline"
+      target="_blank"
+      rel="noreferrer"
+      title="GitHub 仓库"
+    >
+      <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor" aria-hidden="true">
+        <path
+          d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"
+        />
+      </svg>
+    </a>
+    <span class="version">v{version}</span>
+    <span class="badge" title="本扩展不发起任何网络请求">{t("offlineBadge")}</span>
+  </div>
 </header>
 
 <main>
   {#if summary == null}
     <p class="hint">载入中…</p>
   {:else if view === "import"}
-    <!-- 导入在未建库时也能进行：它会顺带引导用户设定本地主密码。 -->
     {#if summary.status === VaultStatus.Locked}
       <UnlockVault onUnlocked={refresh} />
     {:else}
@@ -64,31 +118,37 @@
     <CreateVault onCreated={refresh} />
   {:else if summary.status === VaultStatus.Locked}
     <UnlockVault onUnlocked={refresh} />
+  {:else if tab === "vault"}
+    <VaultShell onChanged={refresh} {collectRequest} />
+  {:else if tab === "generator"}
+    <GeneratorView />
   {:else}
-    <VaultShell {summary} onChanged={refresh} />
+    {#if settingsLoading}
+      <p class="hint">载入中…</p>
+    {:else}
+      <VaultSettings
+        {summary}
+        folders={settingsFolders}
+        cipherCount={summary.cipherCount}
+        loadMs={settingsLoadMs}
+        onChanged={() => void refresh()}
+        onOpenCollect={openCollect}
+      />
+    {/if}
   {/if}
 </main>
 
-<footer>
-  <span class="footer-left">
-    <a
-      class="github"
-      href="https://github.com/r0n9/vaultwarden-offline"
-      target="_blank"
-      rel="noreferrer"
-      title="GitHub 仓库"
-    >
-      <!-- GitHub octocat 图标（内联 SVG，无网络请求） -->
-      <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor" aria-hidden="true">
-        <path
-          d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"
-        />
-      </svg>
-    </a>
-    <span class="muted">v{version}</span>
-  </span>
-  <span class="muted">Phase 4 · 条目管理</span>
-</footer>
+{#if summary?.status === VaultStatus.Unlocked}
+  <nav class="tabs">
+    <button class:active={tab === "vault"} onclick={() => (tab = "vault")}>🔐 密码库</button>
+    <button class:active={tab === "generator"} onclick={() => (tab = "generator")}>
+      ⚄ 生成器
+    </button>
+    <button class:active={tab === "settings"} onclick={() => (tab = "settings")}>
+      ⚙ 设置
+    </button>
+  </nav>
+{/if}
 
 <style>
   header {
@@ -122,6 +182,30 @@
     text-overflow: ellipsis;
   }
 
+  .head-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+  }
+
+  .github {
+    display: inline-flex;
+    align-items: center;
+    color: var(--text-muted);
+    text-decoration: none;
+  }
+
+  .github:hover {
+    color: var(--accent);
+  }
+
+  .version {
+    color: var(--text-muted);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+  }
+
   .badge {
     flex: none;
     padding: 2px 8px;
@@ -138,34 +222,28 @@
     padding: 16px;
   }
 
-  footer {
+  .tabs {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 16px;
     border-top: 1px solid var(--border);
     background: var(--surface);
-    font-size: 11px;
   }
 
-  .footer-left {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .github {
-    display: inline-flex;
-    align-items: center;
+  .tabs button {
+    flex: 1;
+    padding: 10px 0;
+    border: none;
+    background: transparent;
     color: var(--text-muted);
-    text-decoration: none;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    border-top: 2px solid transparent;
   }
 
-  .github:hover {
+  .tabs button.active {
     color: var(--accent);
+    border-top-color: var(--accent);
+    font-weight: 600;
   }
 
-  .muted {
-    color: var(--text-muted);
-  }
 </style>

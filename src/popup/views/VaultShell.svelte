@@ -12,22 +12,20 @@
   } from "@/core/vault/vault-repository";
   import { tabs } from "@/platform/browser-api";
   import { sendMessage } from "@/platform/messaging";
-  import type { VaultSummary } from "@/platform/messaging/types";
   import { browserVaultStorage as storage } from "@/platform/storage/browser-vault-storage";
 
   import AutofillDebug from "./AutofillDebug.svelte";
   import ItemDetail from "./ItemDetail.svelte";
   import ItemEdit from "./ItemEdit.svelte";
   import ItemList from "./ItemList.svelte";
-  import VaultSettings from "./VaultSettings.svelte";
 
-  const { summary, onChanged }: { summary: VaultSummary; onChanged: () => void } = $props();
+  const { onChanged, collectRequest }: { onChanged: () => void; collectRequest: number } =
+    $props();
 
   type Screen =
     | { name: "list" }
     | { name: "detail"; id: string }
     | { name: "edit"; cipher: CipherView }
-    | { name: "settings" }
     | { name: "collect" };
 
   let screen = $state<Screen>({ name: "list" });
@@ -35,7 +33,6 @@
   let folders = $state<FolderView[]>([]);
   let activeUrl = $state<string | undefined>(undefined);
   let loading = $state(true);
-  let loadMs = $state(0);
   let error = $state("");
 
   const selected = $derived.by(() => {
@@ -50,9 +47,7 @@
     loading = true;
     error = "";
     try {
-      const started = performance.now();
       const snapshot = await loadVault(storage);
-      loadMs = performance.now() - started;
       ciphers = snapshot.ciphers;
       folders = snapshot.folders;
     } catch (e) {
@@ -61,6 +56,14 @@
       loading = false;
     }
   }
+
+  // 设置页发起「检测当前页面字段」时，外部把 collectRequest 加一，
+  // 这里据此切到采集屏（collect 屏只存在于本组件内）。
+  $effect(() => {
+    if (collectRequest > 0) {
+      screen = { name: "collect" };
+    }
+  });
 
   $effect(() => {
     void (async () => {
@@ -93,17 +96,7 @@
 {#if loading}
   <p class="hint">正在解密条目…</p>
 {:else if screen.name === "collect"}
-  <AutofillDebug onBack={() => (screen = { name: "settings" })} />
-{:else if screen.name === "settings"}
-  <VaultSettings
-    {summary}
-    {folders}
-    cipherCount={ciphers.length}
-    {loadMs}
-    onBack={() => (screen = { name: "list" })}
-    onChanged={() => void mutate(async () => {})}
-    onOpenCollect={() => (screen = { name: "collect" })}
-  />
+  <AutofillDebug onBack={() => (screen = { name: "list" })} />
 {:else if screen.name === "edit"}
   <ItemEdit
     cipher={screen.cipher}
@@ -130,24 +123,4 @@
     onOpen={(id) => (screen = { name: "detail", id })}
     onCreate={(type: CipherType) => (screen = { name: "edit", cipher: newCipherDraft(type) })}
   />
-  <button class="settings-link" onclick={() => (screen = { name: "settings" })}>设置与数据</button>
 {/if}
-
-<style>
-  .settings-link {
-    margin-top: 10px;
-    border: none;
-    background: transparent;
-    color: var(--text-muted);
-    font-size: 12px;
-    font-family: inherit;
-    cursor: pointer;
-    align-self: center;
-    width: 100%;
-    text-align: center;
-  }
-
-  .settings-link:hover {
-    color: var(--accent);
-  }
-</style>

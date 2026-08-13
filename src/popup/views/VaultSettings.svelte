@@ -25,7 +25,6 @@
     folders,
     cipherCount,
     loadMs,
-    onBack,
     onChanged,
     onOpenCollect,
   }: {
@@ -33,7 +32,6 @@
     folders: FolderView[];
     cipherCount: number;
     loadMs: number;
-    onBack: () => void;
     onChanged: () => void;
     onOpenCollect: () => void;
   } = $props();
@@ -121,8 +119,6 @@
 </script>
 
 <div class="settings">
-  <button class="back" onclick={onBack}>‹ 返回</button>
-
   {#if notice !== ""}
     <p class="notice">{notice}</p>
   {/if}
@@ -235,17 +231,6 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
-  }
-
-  .back {
-    align-self: flex-start;
-    border: none;
-    background: transparent;
-    color: var(--text-muted);
-    font-size: 12px;
-    font-family: inherit;
-    cursor: pointer;
-    padding: 0;
   }
 
   .notice {
