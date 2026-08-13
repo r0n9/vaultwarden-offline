@@ -62,12 +62,33 @@
 </script>
 
 <div class="list-view">
-  <input
-    class="search"
-    type="text"
-    placeholder="搜索名称、用户名、网址、备注…"
-    bind:value={query}
-  />
+  <div class="top-row">
+    <input
+      class="search"
+      type="text"
+      placeholder="搜索名称、用户名、网址、备注…"
+      bind:value={query}
+    />
+    <div class="new-wrap">
+      {#if showTypeMenu}
+        <div class="type-menu">
+          {#each Object.entries(CIPHER_TYPE_LABELS) as [value, label] (value)}
+            <button
+              onclick={() => {
+                showTypeMenu = false;
+                onCreate(Number(value) as CipherType);
+              }}
+            >
+              {label}
+            </button>
+          {/each}
+        </div>
+      {/if}
+      <button class="new-btn" onclick={() => (showTypeMenu = !showTypeMenu)}>
+        ＋ 新建
+      </button>
+    </div>
+  </div>
 
   <div class="scopes">
     {#if activeUrl != null}
@@ -126,37 +147,82 @@
     </ul>
   {/if}
 
-  <div class="create">
-    {#if showTypeMenu}
-      <div class="type-menu">
-        {#each Object.entries(CIPHER_TYPE_LABELS) as [value, label] (value)}
-          <button
-            onclick={() => {
-              showTypeMenu = false;
-              onCreate(Number(value) as CipherType);
-            }}
-          >
-            {label}
-          </button>
-        {/each}
-      </div>
-    {/if}
-    <button class="btn" onclick={() => (showTypeMenu = !showTypeMenu)}>
-      {showTypeMenu ? "取消" : "＋ 新建条目"}
-    </button>
-  </div>
 </div>
 
 <style>
+  /* 撑满内容区：条目列表在内部滚动，外层（main）不再出现滚动条 */
   .list-view {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    height: 100%;
     min-height: 0;
   }
 
+  .top-row {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+  }
+
   .search {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .new-wrap {
+    position: relative;
+    flex: none;
+  }
+
+  .new-btn {
+    height: 100%;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--accent);
+    color: var(--accent-text);
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .new-btn:hover {
+    background: var(--accent-hover);
+  }
+
+  .type-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 4px);
+    z-index: 20;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px;
+    width: 220px;
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+  }
+
+  .type-menu button {
+    padding: 6px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .type-menu button:hover {
+    background: var(--bg-subtle);
+    border-color: var(--border);
   }
 
   .scopes {
@@ -199,7 +265,9 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    max-height: 340px;
+    /* 列表占满剩余高度并在内部滚动，避免双层滚动条 */
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
   }
 
@@ -254,30 +322,4 @@
     flex: none;
   }
 
-  .create {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .type-menu {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4px;
-  }
-
-  .type-menu button {
-    padding: 6px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--surface);
-    color: var(--text);
-    font-size: 12px;
-    font-family: inherit;
-    cursor: pointer;
-  }
-
-  .type-menu button:hover {
-    border-color: var(--accent);
-  }
 </style>
