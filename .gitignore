@@ -1,0 +1,23 @@
+# --- 敏感数据：真实保险库导出文件，绝不入库 ---
+bitwarden_export_*.json
+vaultwarden_export_*.json
+test/fixtures/local/
+*.private.json
+
+# --- 构建产物 ---
+dist/
+build/
+*.zip
+
+# --- 依赖 ---
+node_modules/
+.npm-cache/
+
+# --- 工具 ---
+.DS_Store
+*.log
+npm-debug.log*
+.vite/
+coverage/
+.idea/
+.vscode/

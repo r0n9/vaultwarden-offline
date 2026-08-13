@@ -1,0 +1,83 @@
+{
+  "manifest_version": 3,
+  "name": "__MSG_extName__",
+  "short_name": "Vaultwarden Offline",
+  "description": "__MSG_extDesc__",
+  "version": "0.1.0",
+  "default_locale": "en",
+  "minimum_chrome_version": "110",
+
+  "icons": {
+    "16": "images/icon16.png",
+    "32": "images/icon32.png",
+    "48": "images/icon48.png",
+    "96": "images/icon96.png",
+    "128": "images/icon128.png"
+  },
+
+  "action": {
+    "default_icon": {
+      "19": "images/icon19.png",
+      "38": "images/icon38.png"
+    },
+    "default_title": "Vaultwarden Offline",
+    "default_popup": "popup/index.html"
+  },
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "content_scripts": [
+    {
+      "all_frames": false,
+      "js": ["content/content-message-handler.js"],
+      "matches": ["*://*/*", "file:///*"],
+      "exclude_matches": ["*://*/*.xml*", "file:///*.xml*"],
+      "run_at": "document_start"
+    }
+  ],
+
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "activeTab",
+    "scripting",
+    "tabs",
+    "contextMenus",
+    "alarms",
+    "idle",
+    "clipboardWrite"
+  ],
+
+  "host_permissions": ["https://*/*", "http://*/*", "file:///*"],
+
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; object-src 'self'; connect-src 'none'; frame-src 'self'; form-action 'none'; base-uri 'none'"
+  },
+
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "linux": "Ctrl+Shift+U"
+      },
+      "description": "__MSG_commandOpenPopup__"
+    },
+    "autofill_login": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+L"
+      },
+      "description": "__MSG_commandAutofillLogin__"
+    },
+    "generate_password": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+9"
+      },
+      "description": "__MSG_commandGeneratePassword__"
+    },
+    "lock_vault": {
+      "description": "__MSG_commandLockVault__"
+    }
+  }
+}

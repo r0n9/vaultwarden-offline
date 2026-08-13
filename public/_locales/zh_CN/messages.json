@@ -1,0 +1,40 @@
+{
+  "extName": {
+    "message": "Vaultwarden Offline",
+    "description": "Extension name"
+  },
+  "extDesc": {
+    "message": "完全离线的密码库。无账户、无同步、不发起任何网络请求。",
+    "description": "Extension description"
+  },
+  "commandOpenPopup": {
+    "message": "打开密码库"
+  },
+  "commandAutofillLogin": {
+    "message": "自动填充上次使用的登录项"
+  },
+  "commandGeneratePassword": {
+    "message": "生成密码并复制"
+  },
+  "commandLockVault": {
+    "message": "锁定密码库"
+  },
+  "appName": {
+    "message": "Vaultwarden Offline"
+  },
+  "vaultLocked": {
+    "message": "密码库已锁定"
+  },
+  "noVault": {
+    "message": "尚未创建密码库"
+  },
+  "importToBegin": {
+    "message": "导入 Bitwarden 或 Vaultwarden 导出文件即可开始使用。"
+  },
+  "unlock": {
+    "message": "解锁"
+  },
+  "offlineBadge": {
+    "message": "纯离线"
+  }
+}

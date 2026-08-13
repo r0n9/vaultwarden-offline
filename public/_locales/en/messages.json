@@ -1,0 +1,40 @@
+{
+  "extName": {
+    "message": "Vaultwarden Offline",
+    "description": "Extension name"
+  },
+  "extDesc": {
+    "message": "A fully offline password vault. No accounts, no sync, no network requests — ever.",
+    "description": "Extension description"
+  },
+  "commandOpenPopup": {
+    "message": "Open the vault"
+  },
+  "commandAutofillLogin": {
+    "message": "Autofill the last used login"
+  },
+  "commandGeneratePassword": {
+    "message": "Generate a password and copy it"
+  },
+  "commandLockVault": {
+    "message": "Lock the vault"
+  },
+  "appName": {
+    "message": "Vaultwarden Offline"
+  },
+  "vaultLocked": {
+    "message": "Your vault is locked"
+  },
+  "noVault": {
+    "message": "No vault yet"
+  },
+  "importToBegin": {
+    "message": "Import a Bitwarden or Vaultwarden export file to get started."
+  },
+  "unlock": {
+    "message": "Unlock"
+  },
+  "offlineBadge": {
+    "message": "Offline only"
+  }
+}

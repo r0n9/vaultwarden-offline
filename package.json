@@ -1,0 +1,32 @@
+{
+  "name": "vaultwarden-offline",
+  "version": "0.1.0",
+  "description": "完全离线的密码库浏览器插件，兼容 Bitwarden / Vaultwarden 数据格式",
+  "type": "module",
+  "private": true,
+  "license": "GPL-3.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "node scripts/build.mjs",
+    "build:firefox": "TARGET=firefox node scripts/build.mjs",
+    "icons": "node scripts/gen-icons.mjs",
+    "verify:offline": "node scripts/check-no-network.mjs",
+    "check": "tsc --noEmit",
+    "check:svelte": "svelte-check --tsconfig ./tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.3.0",
+    "@types/chrome": "^0.2.5",
+    "@types/node": "^26.2.0",
+    "svelte": "^5.56.8",
+    "svelte-check": "^4.7.5",
+    "typescript": "^6.0.3",
+    "vite": "^8.2.1",
+    "vitest": "^4.1.10"
+  },
+  "dependencies": {
+    "hash-wasm": "^4.12.0"
+  }
+}
