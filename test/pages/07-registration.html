@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>07 · 注册（两个密码框）</title>
+<style>body{font-family:system-ui;max-width:420px;margin:40px auto;padding:0 16px}
+label{display:block;margin:12px 0 4px;font-size:13px}
+input{width:100%;padding:8px;box-sizing:border-box}</style></head>
+<body>
+<h1>07 · 注册（两个密码框）</h1>
+<p>两个密码框：新密码与确认密码。判定阶段必须能区分它们与登录场景。</p>
+<form action="/register" method="post">
+  <label for="ru">用户名</label><input type="text" id="ru" name="new_username" autocomplete="username">
+  <label for="re">邮箱</label><input type="email" id="re" name="email">
+  <label for="rp">设置密码</label><input type="password" id="rp" name="new_password" autocomplete="new-password">
+  <label for="rc">确认密码</label><input type="password" id="rc" name="confirm_password" autocomplete="new-password">
+  <button type="submit">注册</button>
+</form>
+<p><a href="index.html">← 返回索引</a></p>
+</body></html>

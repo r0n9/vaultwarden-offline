@@ -31,6 +31,8 @@ import {
 } from "@/platform/messaging/types";
 import { browserVaultStorage as vaultStorage } from "@/platform/storage/browser-vault-storage";
 
+import { collectActiveTabFields } from "./autofill-collection";
+
 /**
  * 背景 service worker。
  *
@@ -196,6 +198,8 @@ registerHandlers({
     await applyIdleDetection(settings.vaultTimeout);
     return settings;
   },
+
+  "autofill:collectActiveTab": async () => await collectActiveTabFields(),
 });
 
 // --- 生命周期与事件 -------------------------------------------------------

@@ -15,6 +15,7 @@
   import type { VaultSummary } from "@/platform/messaging/types";
   import { browserVaultStorage as storage } from "@/platform/storage/browser-vault-storage";
 
+  import AutofillDebug from "./AutofillDebug.svelte";
   import ItemDetail from "./ItemDetail.svelte";
   import ItemEdit from "./ItemEdit.svelte";
   import ItemList from "./ItemList.svelte";
@@ -26,7 +27,8 @@
     | { name: "list" }
     | { name: "detail"; id: string }
     | { name: "edit"; cipher: CipherView }
-    | { name: "settings" };
+    | { name: "settings" }
+    | { name: "collect" };
 
   let screen = $state<Screen>({ name: "list" });
   let ciphers = $state<CipherView[]>([]);
@@ -90,6 +92,8 @@
 
 {#if loading}
   <p class="hint">正在解密条目…</p>
+{:else if screen.name === "collect"}
+  <AutofillDebug onBack={() => (screen = { name: "settings" })} />
 {:else if screen.name === "settings"}
   <VaultSettings
     {summary}
@@ -98,6 +102,7 @@
     {loadMs}
     onBack={() => (screen = { name: "list" })}
     onChanged={() => void mutate(async () => {})}
+    onOpenCollect={() => (screen = { name: "collect" })}
   />
 {:else if screen.name === "edit"}
   <ItemEdit

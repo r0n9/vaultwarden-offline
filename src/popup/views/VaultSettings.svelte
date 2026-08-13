@@ -27,6 +27,7 @@
     loadMs,
     onBack,
     onChanged,
+    onOpenCollect,
   }: {
     summary: VaultSummary;
     folders: FolderView[];
@@ -34,6 +35,7 @@
     loadMs: number;
     onBack: () => void;
     onChanged: () => void;
+    onOpenCollect: () => void;
   } = $props();
 
   let settings = $state<Settings | null>(null);
@@ -171,6 +173,12 @@
       <button class="btn btn-secondary" onclick={() => openInTab("export")}>导出</button>
     </div>
     <button class="btn btn-secondary" onclick={clearTrash} disabled={busy}>清空回收站</button>
+  </section>
+
+  <section class="panel">
+    <h2>自动填充</h2>
+    <button class="btn btn-secondary" onclick={onOpenCollect}>检测当前页面字段</button>
+    <p class="hint">Phase 5 第 1 步：识别页面表单结构，暂不填充。</p>
   </section>
 
   <section class="panel">

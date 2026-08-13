@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>10 · 支付表单</title>
+<style>body{font-family:system-ui;max-width:460px;margin:40px auto;padding:0 16px}
+label{display:block;margin:10px 0 3px;font-size:13px}
+input,select{width:100%;padding:8px;box-sizing:border-box}
+.two{display:flex;gap:10px}.two>div{flex:1}</style></head>
+<body>
+<h1>10 · 支付表单</h1>
+<p>银行卡与账单地址，用于验证卡片、身份类字段的采集。</p>
+<form action="/pay" method="post">
+  <label for="ccname">持卡人姓名</label>
+  <input type="text" id="ccname" name="cc-name" autocomplete="cc-name">
+  <label for="ccnum">卡号</label>
+  <input type="text" id="ccnum" name="cardnumber" autocomplete="cc-number" maxlength="19">
+  <div class="two">
+    <div><label for="ccmonth">有效期月</label>
+      <select id="ccmonth" name="cc-exp-month" autocomplete="cc-exp-month">
+        <option value="">月</option><option value="01">01</option><option value="12">12</option>
+      </select></div>
+    <div><label for="ccyear">有效期年</label>
+      <input type="text" id="ccyear" name="cc-exp-year" autocomplete="cc-exp-year" maxlength="4"></div>
+    <div><label for="cvc">安全码</label>
+      <input type="text" id="cvc" name="cvc" autocomplete="cc-csc" maxlength="4"></div>
+  </div>
+  <label for="addr">账单地址</label>
+  <input type="text" id="addr" name="address-line1" autocomplete="address-line1">
+  <label for="city">城市</label>
+  <input type="text" id="city" name="city" autocomplete="address-level2">
+  <label for="zip">邮编</label>
+  <input type="text" id="zip" name="postal-code" autocomplete="postal-code">
+  <button type="submit">支付</button>
+</form>
+<p><a href="index.html">← 返回索引</a></p>
+</body></html>

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>08 · 隐藏与陷阱字段</title>
+<style>body{font-family:system-ui;max-width:460px;margin:40px auto;padding:0 16px}
+input{display:block;width:100%;padding:8px;margin:6px 0;box-sizing:border-box}
+.offscreen{position:absolute;left:-9999px}
+.zero{width:1px;height:1px;padding:0;border:0}
+.clipped{clip-path:inset(50%);position:absolute}</style></head>
+<body>
+<h1>08 · 隐藏与陷阱字段</h1>
+<p>这一页专门用来验证「不可见判定」。下面只有<strong>两个</strong>字段是用户真正看得见的，
+其余都应被标记为不可见或直接排除。</p>
+<form action="/trap" method="post">
+  <label for="v1">可见用户名</label><input type="text" id="v1" name="visible_user">
+  <label for="v2">可见密码</label><input type="password" id="v2" name="visible_pass">
+
+  <input type="hidden" name="csrf_token" value="abc123">
+  <input type="text" name="display_none" style="display:none">
+  <input type="text" name="visibility_hidden" style="visibility:hidden">
+  <input type="text" name="opacity_zero" style="opacity:0">
+  <input type="text" name="offscreen" class="offscreen">
+  <input type="text" name="one_pixel" class="zero">
+  <input type="text" name="clipped" class="clipped">
+  <input type="text" name="ignored_by_attr" data-bwignore>
+  <input type="search" name="site_search" placeholder="搜索（不该被当作可填字段）">
+  <button type="submit">提交</button>
+</form>
+<p><a href="index.html">← 返回索引</a></p>
+</body></html>

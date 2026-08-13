@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>04 · div 左侧文字</title>
+<style>body{font-family:system-ui;max-width:420px;margin:40px auto;padding:0 16px}
+.row{display:flex;align-items:center;gap:10px;margin:10px 0}
+.row span{width:70px;font-size:13px}
+input{flex:1;padding:8px}</style></head>
+<body>
+<h1>04 · div 左侧文字</h1>
+<p>标签是普通 <code>&lt;span&gt;</code> 而非 label，需要靠 <code>label-left</code> 向前取文字。</p>
+<form action="/go" method="post">
+  <div class="row"><span>登录名</span><input type="text" name="loginname"></div>
+  <div class="row"><span>密　码</span><input type="password" name="secret"></div>
+  <button type="submit">进入</button>
+</form>
+<p><a href="index.html">← 返回索引</a></p>
+</body></html>

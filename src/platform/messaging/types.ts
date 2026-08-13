@@ -1,6 +1,7 @@
+import type { KdfConfig } from "@/core/crypto";
+import type { AutofillPageDetails } from "@/core/autofill/models";
 import type { Settings } from "@/core/state/settings";
 import type { VaultStatus } from "@/core/state/vault-status";
-import type { KdfConfig } from "@/core/crypto";
 
 /**
  * 扩展内部消息契约。
@@ -83,6 +84,22 @@ export interface MessageContracts {
     request: Partial<Settings>;
     response: Settings;
   };
+  "autofill:collectActiveTab": {
+    request: undefined;
+    response: AutofillCollectionResult;
+  };
+}
+
+/** 一次跨帧字段采集的结果。 */
+export interface AutofillCollectionResult {
+  ok: boolean;
+  /** 采集失败时的原因（如页面是 chrome:// 这类受保护地址）。 */
+  message?: string;
+  url?: string;
+  frames: {
+    frameId: number;
+    details: AutofillPageDetails | null;
+  }[];
 }
 
 export type MessageCommand = keyof MessageContracts;

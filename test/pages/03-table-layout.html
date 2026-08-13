@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>03 · 表格排版</title>
+<style>body{font-family:system-ui;max-width:520px;margin:40px auto;padding:0 16px}
+table{border-collapse:collapse}td{padding:6px 10px;border:1px solid #ddd}</style></head>
+<body>
+<h1>03 · 表格排版</h1>
+<p>老派后台系统的写法：字段标签在表格的上一行，靠 <code>label-top</code> 才能识别。</p>
+<form action="/auth" method="post">
+  <table>
+    <tr><td>账号</td><td>口令</td></tr>
+    <tr><td><input type="text" name="acct"></td><td><input type="password" name="pw"></td></tr>
+  </table>
+  <button type="submit">提交</button>
+</form>
+<p><a href="index.html">← 返回索引</a></p>
+</body></html>

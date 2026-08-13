@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>06 · iframe 中的登录框</title>
+<style>body{font-family:system-ui;max-width:520px;margin:40px auto;padding:0 16px}
+iframe{width:100%;height:220px;border:1px solid #ccc}</style></head>
+<body>
+<h1>06 · iframe 中的登录框</h1>
+<p>登录表单在同源 iframe 内。采集必须遍历所有框架，否则这里一个字段都找不到。
+主框架自身还有一个搜索框，用于确认它没有被误判成登录字段。</p>
+<input type="search" name="q" placeholder="站内搜索">
+<iframe src="06-iframe-inner.html" title="登录"></iframe>
+<p><a href="index.html">← 返回索引</a></p>
+</body></html>

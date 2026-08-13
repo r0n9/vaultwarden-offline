@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>自动填充测试页</title>
+<style>body{font-family:system-ui;max-width:640px;margin:40px auto;padding:0 16px;line-height:1.7}
+ul{padding-left:20px}li{margin:6px 0}code{background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:.9em}
+.note{background:#f8fafc;border-left:3px solid #1d4ed8;padding:10px 14px;font-size:14px}</style></head>
+<body>
+<h1>自动填充测试页</h1>
+<div class="note">
+用法：<code>npx serve test/pages</code>（或任意静态服务器），逐页打开后用插件的
+<strong>设置与数据 → 自动填充 → 检测当前页面字段</strong> 查看采集结果。<br>
+用 <code>file://</code> 直接打开也可以，但 iframe 与 Shadow DOM 页在部分浏览器下受限，建议起本地服务器。
+</div>
+<ul>
+  <li><a href="01-simple-login.html">01 · 标准登录表单</a> —— 规范的 <code>&lt;label for&gt;</code></li>
+  <li><a href="02-placeholder-only.html">02 · 只有 placeholder</a> —— 无 label，现代站点最常见</li>
+  <li><a href="03-table-layout.html">03 · 表格排版</a> —— 标签在上一行，考验 <code>label-top</code></li>
+  <li><a href="04-div-layout.html">04 · div 左侧文字</a> —— 考验 <code>label-left</code> 向前取文</li>
+  <li><a href="05-shadow-dom.html">05 · Shadow DOM</a> —— 普通查询看不见的表单</li>
+  <li><a href="06-iframe-host.html">06 · iframe 中的登录框</a> —— 跨框架采集</li>
+  <li><a href="07-registration.html">07 · 注册（两个密码框）</a> —— 新密码 vs 确认密码</li>
+  <li><a href="08-hidden-traps.html">08 · 隐藏与陷阱字段</a> —— 只有 2 个字段应判为可见</li>
+  <li><a href="09-dynamic.html">09 · 分步登录</a> —— 密码框稍后才插入 DOM</li>
+  <li><a href="10-checkout.html">10 · 支付表单</a> —— 卡片与地址字段</li>
+</ul>
+<h2>各页的预期结果</h2>
+<ul>
+  <li>01–04：各 2 个可见输入框（外加 01 的复选框），标签文字都应被正确提取</li>
+  <li>05：2 个字段，说明 Shadow DOM 已被穿透</li>
+  <li>06：主框架 1 个搜索框应<strong>不被采集</strong>；iframe 里 2 个字段应出现在独立框架分组中</li>
+  <li>07：4 个字段</li>
+  <li>08：勾掉「显示不可见字段」时应<strong>只剩 2 个</strong>；<code>data-bwignore</code> 与 <code>type=search</code> 应完全不出现</li>
+  <li>09：初始 1 个字段；点「下一步」后重新采集应变成 2 个</li>
+  <li>10：8 个字段，含一个 <code>select</code></li>
+</ul>
+</body></html>

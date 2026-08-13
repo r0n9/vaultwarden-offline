@@ -37,6 +37,20 @@ npm run build:firefox  # Firefox (MV3 事件页) → dist/
 | `npm run icons` | 重新生成图标 PNG |
 | `npm run verify:offline` | 对 `dist/` 单独跑零网络校验 |
 
+## 自动填充测试页
+
+`test/pages/` 下有一组自建页面，覆盖常见的表单排版模式（标准 label、纯 placeholder、
+表格排版、Shadow DOM、iframe、动态插入、隐藏陷阱、支付表单）。
+
+```bash
+npx serve test/pages     # 或任意静态服务器
+```
+
+打开任一页面后，用插件的 **设置与数据 → 自动填充 → 检测当前页面字段** 查看采集结果。
+`test/pages/index.html` 列出了每一页的预期结果。
+
+用 `file://` 直接打开也可以，但 iframe 与 Shadow DOM 页在部分浏览器下受限，建议起本地服务器。
+
 ---
 
 ## 离线保证是怎么做到的

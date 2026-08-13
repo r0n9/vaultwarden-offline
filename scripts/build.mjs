@@ -22,7 +22,7 @@ const DIST = resolve(ROOT, "dist");
 const TARGET = process.env.TARGET ?? "chrome";
 
 /** 需要独立打包的 content script（文件名去掉扩展名）。 */
-const CONTENT_SCRIPTS = ["content-message-handler"];
+const CONTENT_SCRIPTS = ["content-message-handler", "autofill-collector"];
 
 const sharedResolve = {
   alias: { "@": resolve(ROOT, "src") },
@@ -47,6 +47,9 @@ async function buildBackground() {
   await build({
     configFile: false,
     root: ROOT,
+    // 关掉 publicDir：静态资源由 copyStaticAssets 统一拷贝一次。
+    // 不关的话 Vite 会把整个 public/ 再拷进本次构建的 outDir。
+    publicDir: false,
     resolve: sharedResolve,
     build: {
       outDir: DIST,
@@ -68,6 +71,7 @@ async function buildContentScripts() {
     await build({
       configFile: false,
       root: ROOT,
+      publicDir: false,
       resolve: sharedResolve,
       build: {
         outDir: resolve(DIST, "content"),
@@ -86,7 +90,11 @@ async function buildContentScripts() {
 }
 
 async function copyStaticAssets() {
-  await cp(resolve(ROOT, "public"), DIST, { recursive: true });
+  await cp(resolve(ROOT, "public"), DIST, {
+    recursive: true,
+    // macOS 会在目录里散落 .DS_Store，没必要打进扩展包。
+    filter: (source) => !source.endsWith(".DS_Store"),
+  });
 }
 
 /**

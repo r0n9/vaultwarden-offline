@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>09 · 分步登录（动态插入）</title>
+<style>body{font-family:system-ui;max-width:420px;margin:40px auto;padding:0 16px}
+input{display:block;width:100%;padding:8px;margin:6px 0;box-sizing:border-box}
+button{padding:8px 16px;margin-top:8px}</style></head>
+<body>
+<h1>09 · 分步登录（动态插入）</h1>
+<p>先填用户名，点「下一步」后密码框才被插入 DOM。这类流程（Google、微软等广泛使用）
+要求采集能在页面变化后重新进行。</p>
+<form id="stepForm" action="/step" method="post">
+  <label for="du">邮箱</label>
+  <input type="text" id="du" name="dyn_user" autocomplete="username">
+  <button type="button" id="next">下一步</button>
+</form>
+<p><a href="index.html">← 返回索引</a></p>
+<script>
+document.getElementById("next").addEventListener("click", () => {
+  if (document.getElementById("dp")) return;
+  const form = document.getElementById("stepForm");
+  const label = document.createElement("label");
+  label.htmlFor = "dp"; label.textContent = "密码";
+  const input = document.createElement("input");
+  input.type = "password"; input.id = "dp"; input.name = "dyn_pass";
+  input.autocomplete = "current-password";
+  form.insertBefore(label, form.lastElementChild);
+  form.insertBefore(input, form.lastElementChild);
+});
+</script>
+</body></html>

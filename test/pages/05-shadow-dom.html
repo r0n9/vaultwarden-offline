@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>05 · Shadow DOM</title>
+<style>body{font-family:system-ui;max-width:420px;margin:40px auto;padding:0 16px}</style></head>
+<body>
+<h1>05 · Shadow DOM</h1>
+<p>表单在 shadow root 里。普通 <code>querySelectorAll</code> 完全看不到它——
+这是 Web Components 站点上自动填充失效的典型原因。</p>
+<login-widget></login-widget>
+<p><a href="index.html">← 返回索引</a></p>
+<script>
+class LoginWidget extends HTMLElement {
+  connectedCallback() {
+    const root = this.attachShadow({ mode: "open" });
+    root.innerHTML = `
+      <style>input{display:block;width:100%;padding:8px;margin:8px 0;box-sizing:border-box}</style>
+      <form action="/shadow-login" method="post">
+        <label for="su">用户名</label>
+        <input type="text" id="su" name="shadow_user">
+        <label for="sp">密码</label>
+        <input type="password" id="sp" name="shadow_pass">
+        <button type="submit">登录</button>
+      </form>`;
+  }
+}
+customElements.define("login-widget", LoginWidget);
+</script>
+</body></html>

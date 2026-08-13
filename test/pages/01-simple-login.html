@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>01 · 标准登录表单</title>
+<style>body{font-family:system-ui;max-width:420px;margin:40px auto;padding:0 16px}
+label{display:block;margin:12px 0 4px;font-size:13px}
+input{width:100%;padding:8px;box-sizing:border-box}
+button{margin-top:16px;padding:8px 16px}</style></head>
+<body>
+<h1>01 · 标准登录表单</h1>
+<p>最规范的写法：每个字段都有配套 <code>&lt;label for&gt;</code>。</p>
+<form action="/login" method="post" id="loginForm" name="login">
+  <label for="user">用户名</label>
+  <input type="text" id="user" name="username" autocomplete="username">
+  <label for="pass">密码</label>
+  <input type="password" id="pass" name="password" autocomplete="current-password">
+  <label><input type="checkbox" name="remember"> 记住我</label>
+  <button type="submit">登录</button>
+</form>
+<p><a href="index.html">← 返回索引</a></p>
+</body></html>
