@@ -122,7 +122,15 @@ src/
 - [x] **Phase 2** 存储层与锁定状态机
 - [x] **Phase 3** 导入导出
 - [x] **Phase 4** Popup UI 与条目增删改查
-- [ ] **Phase 5** 自动填充引擎
+- [x] **Phase 5** 自动填充引擎
+  - [x] 页面字段采集（含 Shadow DOM、跨 iframe）
+  - [x] 填充执行（绕过框架值追踪器）
+  - [x] 字段匹配启发式（autocomplete → 关键词 → 位置兜底）
+  - [x] 右键菜单填充
+  - [x] 保存 / 更新凭据提示条
+  - [x] 快捷键 `Ctrl+Shift+L` 填充上次使用的登录项
+  - [ ] **内联菜单浮层**（输入框聚焦时的下拉选择）—— 暂缓，工作量最大的一块，
+        需要时再实现（参考 Bitwarden 的 overlay 模块，约 3600 行）
 - [ ] **Phase 6** 生成器 / TOTP
 
 完整功能范围见 [docs/FEATURES.md](docs/FEATURES.md)。
