@@ -234,4 +234,15 @@ describe("筛选与排序", () => {
     const sorted = sortCiphers(filterCiphers(items, {}));
     expect(sorted.map((c) => c.name)).toEqual(["Alpha", "Beta", "Zeta"]);
   });
+
+  it("收藏优先于名称排序（收藏的条目即使名称靠后也排最前）", () => {
+    // 回归：快捷键回退、右键菜单都靠这个顺序取第一条。
+    const favoriteLast = { ...items[0]!, favorite: true, name: "Zebra" };
+    const plainFirst = { ...items[1]!, favorite: false, name: "Alpha" };
+    const plainMiddle = { ...items[3]!, favorite: false, name: "Beta" };
+
+    const sorted = sortCiphers([plainFirst, favoriteLast, plainMiddle]);
+
+    expect(sorted.map((c) => c.name)).toEqual(["Zebra", "Alpha", "Beta"]);
+  });
 });
