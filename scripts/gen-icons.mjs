@@ -117,7 +117,7 @@ function distanceToSegment(px, py, ax, ay, bx, by) {
   return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
 }
 
-/** 盾牌形：上半部圆角矩形，下半部收口到尖。坐标归一化到 [0,1]。 */
+/** 盾牌形：上半部圆角矩形，下半部以四分之一椭圆弧收口（底部圆润，非尖点）。 */
 function insideShield(x, y) {
   const cx = 0.5;
   const topY = 0.16;
@@ -130,21 +130,22 @@ function insideShield(x, y) {
   }
 
   if (y <= waistY) {
-    // 上半部：圆角矩形
+    // 上半部：圆角矩形（圆角较大，观感圆润）
     const minX = cx - halfW;
     const maxX = cx + halfW;
     if (x < minX || x > maxX) {
       return false;
     }
-    const radius = 0.07;
+    const radius = 0.10;
     const rx = Math.min(Math.max(x, minX + radius), maxX - radius);
     const ry = Math.min(Math.max(y, topY + radius), waistY - radius);
     return Math.hypot(x - rx, y - ry) <= radius;
   }
 
-  // 下半部：线性收口到底部尖点
+  // 下半部：四分之一椭圆弧——宽度按 sqrt(1 - t²) 衰减，
+  // 底部形成圆弧而非直线收口的尖点。
   const t = (y - waistY) / (bottomY - waistY);
-  const width = halfW * (1 - t);
+  const width = halfW * Math.sqrt(1 - t * t);
   return Math.abs(x - cx) <= width;
 }
 
