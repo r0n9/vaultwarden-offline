@@ -46,6 +46,14 @@ export async function hmacSha256(value: Uint8Array, key: Uint8Array | CryptoKey)
   return new Uint8Array(await subtle().sign("HMAC", importedKey, value as BufferSource));
 }
 
+export async function hmacSha512(value: Uint8Array, key: Uint8Array): Promise<Uint8Array> {
+  const algorithm = { name: "HMAC", hash: { name: "SHA-512" } };
+  const importedKey = await subtle().importKey("raw", key as BufferSource, algorithm, false, [
+    "sign",
+  ]);
+  return new Uint8Array(await subtle().sign("HMAC", importedKey, value as BufferSource));
+}
+
 export async function pbkdf2(
   password: string | Uint8Array,
   salt: string | Uint8Array,

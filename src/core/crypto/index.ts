@@ -58,6 +58,6 @@ export {
   wrapKey,
 } from "./key-derivation";
 
-export { hkdfExpand, hmacSha256, pbkdf2, sha256 } from "./primitives";
+export { hkdfExpand, hmacSha256, hmacSha512, pbkdf2, sha256 } from "./primitives";
 
 export { runCryptoSelfTest, type SelfTestResult } from "./self-test";

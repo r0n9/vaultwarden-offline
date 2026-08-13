@@ -7,6 +7,7 @@
 
   import CipherIcon from "../components/CipherIcon.svelte";
   import CopyRow from "../components/CopyRow.svelte";
+  import TotpDisplay from "../components/TotpDisplay.svelte";
   import { TYPE_FIELDS, readPayload } from "../lib/cipher-fields";
 
   const {
@@ -128,8 +129,11 @@
           <CopyRow label="密码" value={cipher.login.password} secret />
         {/if}
         {#if cipher.login?.totp}
-          <CopyRow label="验证器密钥（TOTP）" value={cipher.login.totp} secret />
-          <p class="hint">动态验证码的生成将在 Phase 6 接入。</p>
+          <div class="totp-row">
+            <span class="totp-label">动态验证码</span>
+            <TotpDisplay totpValue={cipher.login.totp} />
+          </div>
+          <CopyRow label="验证器密钥" value={cipher.login.totp} secret />
         {/if}
         {#each cipher.login?.uris ?? [] as entry, index (index)}
           {#if entry.uri}
@@ -315,6 +319,19 @@
   .row {
     display: flex;
     gap: 8px;
+  }
+
+  .totp-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .totp-label {
+    font-size: 11px;
+    color: var(--text-muted);
   }
 
   .fill-ok {

@@ -3,6 +3,14 @@
   import type { CipherView, FolderView } from "@/core/vault/models";
   import { CIPHER_TYPE_LABELS } from "@/core/vault/vault-search";
 
+  import {
+    defaultPassphraseOptions,
+    defaultPasswordOptions,
+    generatePassphrase,
+    generatePassword,
+    generateUsername,
+  } from "@/core/generator";
+
   import { TYPE_FIELDS, readPayload, writePayload } from "../lib/cipher-fields";
 
   const {
@@ -32,6 +40,17 @@
     })),
   );
   let saving = $state(false);
+  let showPasswordMenu = $state(false);
+
+  function generateStrong() {
+    showPasswordMenu = false;
+    draft.login = { ...(draft.login ?? {}), password: generatePassword({ ...defaultPasswordOptions() }) };
+  }
+
+  function generatePhrase() {
+    showPasswordMenu = false;
+    draft.login = { ...(draft.login ?? {}), password: generatePassphrase({ ...defaultPassphraseOptions() }) };
+  }
 
   const fields = $derived(TYPE_FIELDS[draft.type] ?? []);
   const isNew = $derived(cipher.name === "");
@@ -101,29 +120,57 @@
   {#if draft.type === CipherType.Login}
     <div class="field">
       <label for="username">用户名</label>
-      <input
-        id="username"
-        type="text"
-        value={draft.login?.username ?? ""}
-        oninput={(e) => {
-          draft.login = { ...(draft.login ?? {}), username: e.currentTarget.value };
-        }}
-        autocomplete="off"
-      />
+      <div class="with-action">
+        <input
+          id="username"
+          type="text"
+          value={draft.login?.username ?? ""}
+          oninput={(e) => {
+            draft.login = { ...(draft.login ?? {}), username: e.currentTarget.value };
+          }}
+          autocomplete="off"
+        />
+        <button
+          type="button"
+          class="gen"
+          title="生成用户名"
+          onclick={() => {
+            draft.login = { ...(draft.login ?? {}), username: generateUsername() };
+          }}
+        >
+          ⚄
+        </button>
+      </div>
     </div>
 
     <div class="field">
       <label for="password">密码</label>
-      <input
-        id="password"
-        type="text"
-        value={draft.login?.password ?? ""}
-        oninput={(e) => {
-          draft.login = { ...(draft.login ?? {}), password: e.currentTarget.value };
-        }}
-        autocomplete="off"
-      />
-      <p class="hint">密码生成器将在 Phase 6 接入。</p>
+      <div class="with-action">
+        <input
+          id="password"
+          type="text"
+          value={draft.login?.password ?? ""}
+          oninput={(e) => {
+            draft.login = { ...(draft.login ?? {}), password: e.currentTarget.value };
+          }}
+          autocomplete="off"
+        />
+        {#if showPasswordMenu}
+          <div class="gen-menu">
+            <button type="button" onclick={generateStrong}>强密码（20 位）</button>
+            <button type="button" onclick={generatePhrase}>密码短语（4 词）</button>
+          </div>
+        {:else}
+          <button
+            type="button"
+            class="gen"
+            title="生成密码"
+            onclick={() => (showPasswordMenu = !showPasswordMenu)}
+          >
+            ⚄
+          </button>
+        {/if}
+      </div>
     </div>
 
     <div class="field">
@@ -267,6 +314,61 @@
   textarea:focus {
     outline: 2px solid var(--accent);
     outline-offset: -1px;
+  }
+
+  .with-action {
+    position: relative;
+    display: flex;
+    gap: 6px;
+  }
+
+  .with-action input {
+    flex: 1;
+  }
+
+  .gen {
+    flex: none;
+    width: 34px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-subtle);
+    color: var(--text);
+    font-size: 15px;
+    cursor: pointer;
+  }
+
+  .gen:hover {
+    border-color: var(--accent);
+  }
+
+  .gen-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 2px);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+  }
+
+  .gen-menu button {
+    padding: 7px 14px;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .gen-menu button:hover {
+    background: var(--bg-subtle);
   }
 
   .group-label {
