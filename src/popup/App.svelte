@@ -140,12 +140,29 @@
 
 {#if summary?.status === VaultStatus.Unlocked}
   <nav class="tabs">
-    <button class:active={tab === "vault"} onclick={() => (tab = "vault")}>🔐 密码库</button>
+    <button class:active={tab === "vault"} onclick={() => (tab = "vault")}>
+      <!-- 盾牌 + 钥匙孔：与扩展图标呼应 -->
+      <svg class="tab-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M8 1.4 13.6 3.7v4.1c0 3.1-2.2 5.5-5.6 6.7C4.6 13.3 2.4 10.9 2.4 7.8V3.7Z" />
+        <circle cx="8" cy="7.1" r="1.6" />
+        <path d="M8 8.7v1.9" />
+      </svg>
+      <span>密码库</span>
+    </button>
     <button class:active={tab === "generator"} onclick={() => (tab = "generator")}>
-      ⚄ 生成器
+      <!-- 闪电：生成 -->
+      <svg class="tab-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M9.4 1.2 3.6 8.8h3.8l-1.4 6 5.9-7.4H8.1Z" />
+      </svg>
+      <span>生成器</span>
     </button>
     <button class:active={tab === "settings"} onclick={() => (tab = "settings")}>
-      ⚙ 设置
+      <!-- 齿轮：设置 -->
+      <svg class="tab-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="8" cy="8" r="2.4" />
+        <path d="M8 1.2v2.1M8 12.7v2.1M1.2 8h2.1M12.7 8h2.1M3.2 3.2l1.5 1.5M11.3 11.3l1.5 1.5M12.8 3.2l-1.5 1.5M4.7 11.3l-1.5 1.5" />
+      </svg>
+      <span>设置</span>
     </button>
   </nav>
 {/if}
@@ -232,13 +249,18 @@
     background: var(--surface);
   }
 
+  /* 参考 Bitwarden：图标在上、文字在下，垂直排列；选中态主题色 + 顶部指示条 */
   .tabs button {
     flex: 1;
-    padding: 10px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 8px 0 7px;
     border: none;
     background: transparent;
     color: var(--text-muted);
-    font-size: 12px;
+    font-size: 10px;
     font-family: inherit;
     cursor: pointer;
     border-top: 2px solid transparent;
@@ -248,6 +270,15 @@
     color: var(--accent);
     border-top-color: var(--accent);
     font-weight: 600;
+  }
+
+  .tabs button:not(.active):hover {
+    color: var(--text);
+  }
+
+  .tab-icon {
+    width: 19px;
+    height: 19px;
   }
 
 </style>
