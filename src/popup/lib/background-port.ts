@@ -10,9 +10,17 @@ import { POPUP_PORT_NAME } from "@/platform/messaging/types";
  */
 export function connectToBackground(): void {
   try {
-    api().runtime.connect({ name: POPUP_PORT_NAME });
+    const port = api().runtime.connect({ name: POPUP_PORT_NAME });
+
+    // 背景 service worker 可能已被回收（休眠 30 秒后），此时端口会**立即断开**
+    // 并设置 runtime.lastError。若不读取它，Chrome 会在控制台报
+    // "Unchecked runtime.lastError: Could not establish connection"。
+    // 读取 getter 即消费，这里只吞错误、不做任何处理——连接失败时
+    // 超时锁定退化为按分钟计时，其余功能不受影响。
+    port.onDisconnect.addListener(() => {
+      void api().runtime.lastError;
+    });
   } catch {
-    // 背景页可能正在冷启动；此时连接失败不影响其余功能，超时锁定会退化为
-    // 按分钟计时，不必打扰用户。
+    // SW 冷启动时 connect 也可能同步抛错，同样忽略。
   }
 }
