@@ -1,6 +1,7 @@
 <script lang="ts">
-  import type { CipherType } from "@/core/vault/enums";
+  import { CipherType } from "@/core/vault/enums";
   import type { CipherView, FolderView } from "@/core/vault/models";
+  import { extractHostname } from "@/core/vault/uri-matching";
   import {
     loadVault,
     newCipherDraft,
