@@ -36,7 +36,7 @@
 
 <header>
   <div class="brand">
-    <span class="mark">V</span>
+    <img class="mark" src={runtime.getURL("images/icon38.png")} alt="" />
     <span class="title">{t("appName")}</span>
   </div>
   <span class="badge" title="本扩展不发起任何网络请求">{t("offlineBadge")}</span>
@@ -93,15 +93,9 @@
   }
 
   .mark {
-    display: grid;
-    place-items: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 6px;
-    background: var(--accent);
-    color: var(--accent-text);
-    font-weight: 700;
-    font-size: 13px;
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
     flex: none;
   }
 
