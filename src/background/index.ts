@@ -42,6 +42,7 @@ import {
 import { fillActiveTab, fillTab } from "./autofill-fill";
 import { getCipher } from "@/core/vault/vault-repository";
 import { commitSave, handleSaveDetected } from "./save-detection";
+import { registerBadgeTriggers, updateMatchBadge } from "./badge";
 import { pickShortcutTarget } from "./shortcut";
 
 /**
@@ -66,10 +67,12 @@ async function refreshActionIcon(status: VaultStatus): Promise<void> {
         ? { 19: "images/icon19_locked.png", 38: "images/icon38_locked.png" }
         : { 19: "images/icon19.png", 38: "images/icon38.png" },
     });
-    await api().action.setBadgeText({ text: "" });
   } catch (e) {
     logger.warn("更新工具栏图标失败:", e);
   }
+
+  // 角标（匹配条目数）不归图标管：解锁态显示数字、锁定态由 updateMatchBadge 清空。
+  void updateMatchBadge(vaultStorage);
 }
 
 async function currentStatusAndRefresh(): Promise<VaultStatus> {
@@ -342,6 +345,8 @@ api().commands.onCommand.addListener((command) => {
 void currentStatusAndRefresh();
 registerContextMenu(vaultStorage);
 registerMenuRefreshTriggers(vaultStorage);
+registerBadgeTriggers(vaultStorage);
 void refreshContextMenu(vaultStorage);
+void updateMatchBadge(vaultStorage);
 
 logger.info("背景 service worker 已启动");
