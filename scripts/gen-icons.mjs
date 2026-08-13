@@ -24,15 +24,20 @@ const THEMES = {
   normal: {
     bgStart: [0x00, 0xc9, 0xa7],
     bgEnd: [0x00, 0x47, 0xab],
-    shieldTop: [0xe2, 0xe8, 0xf0],
-    shieldBottom: [0x94, 0xa3, 0xb8],
+    // 盾牌翡翠青绿四档：左半（亮）外缘 → 中线，右半（暗）中线 → 外缘。
+    shieldLeftOuter: [0x6e, 0xe7, 0xb7],
+    shieldLeftInner: [0x10, 0xb9, 0x81],
+    shieldRightInner: [0x05, 0x96, 0x69],
+    shieldRightOuter: [0x04, 0x78, 0x57],
     keyhole: [0x00, 0x47, 0xab],
   },
   locked: {
     bgStart: [0x64, 0x74, 0x8b],
     bgEnd: [0x47, 0x55, 0x69],
-    shieldTop: [0xcb, 0xd5, 0xe1],
-    shieldBottom: [0x94, 0xa3, 0xb8],
+    shieldLeftOuter: [0xe2, 0xe8, 0xf0],
+    shieldLeftInner: [0xcb, 0xd5, 0xe1],
+    shieldRightInner: [0x94, 0xa3, 0xb8],
+    shieldRightOuter: [0x64, 0x74, 0x8b],
     keyhole: [0x47, 0x55, 0x69],
   },
 };
@@ -210,10 +215,15 @@ function renderIcon(size, theme) {
           if (insideShield(x, y)) {
             if (insideKeyhole(x, y)) {
               color = theme.keyhole;
+            } else if (x < 0.5) {
+              // 左半（亮）：水平渐变，外缘最亮 → 中线稍暗。
+              const t = Math.min(Math.max((x - 0.2) / 0.3, 0), 1);
+              color = lerp(theme.shieldLeftOuter, theme.shieldLeftInner, t);
             } else {
-              // 盾牌：银白金属感，垂直渐变（上亮下暗，模拟金属高光）。
-              const t = Math.min(Math.max((y - 0.16) / 0.64, 0), 1);
-              color = lerp(theme.shieldTop, theme.shieldBottom, t);
+              // 右半（暗）：水平渐变，中线暗 → 外缘最暗。整体暗于左半，
+              // 中线处形成明确的竖线分界。
+              const t = Math.min(Math.max((x - 0.5) / 0.3, 0), 1);
+              color = lerp(theme.shieldRightInner, theme.shieldRightOuter, t);
             }
           } else {
             // 底色：对角渐变 135deg，左上青绿 → 右下钴蓝。
