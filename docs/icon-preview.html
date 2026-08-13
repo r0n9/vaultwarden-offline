@@ -1,0 +1,109 @@
+<title>Vaultwarden Offline 图标预览</title>
+
+<div class="wrap">
+  <h1>Vaultwarden Offline · 新图标</h1>
+  <p class="sub">方案 B：深蓝渐变底 + 金色钥匙（45°）+ 白色 V —— 钥匙=解锁密码库，V=品牌</p>
+
+  <div class="row">
+    <div class="cell">
+      <svg viewBox="0 0 128 128" width="128" height="128" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#2f6bf3"/>
+            <stop offset="1" stop-color="#1e3a8a"/>
+          </linearGradient>
+        </defs>
+        <rect x="3.8" y="3.8" width="120.4" height="120.4" rx="28" fill="url(#bg)"/>
+        <g transform="translate(64 64) rotate(-45)">
+          <circle cx="-20" cy="0" r="17" fill="none" stroke="#f59e0b" stroke-width="13"/>
+          <rect x="-6" y="-5" width="27" height="10" fill="#f59e0b"/>
+          <rect x="15" y="5" width="6" height="4" fill="#f59e0b"/>
+          <rect x="18" y="9" width="3" height="5" fill="#f59e0b"/>
+        </g>
+        <line x1="41" y1="38.4" x2="64" y2="89.6" stroke="#ffffff" stroke-width="21.8" stroke-linecap="round"/>
+        <line x1="87" y1="38.4" x2="64" y2="89.6" stroke="#ffffff" stroke-width="21.8" stroke-linecap="round"/>
+      </svg>
+      <p>normal 128px</p>
+    </div>
+
+    <div class="cell">
+      <svg viewBox="0 0 128 128" width="128" height="128" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#64748b"/>
+            <stop offset="1" stop-color="#475569"/>
+          </linearGradient>
+        </defs>
+        <rect x="3.8" y="3.8" width="120.4" height="120.4" rx="28" fill="url(#bg2)"/>
+        <g transform="translate(64 64) rotate(-45)">
+          <circle cx="-20" cy="0" r="17" fill="none" stroke="#c28b4e" stroke-width="13"/>
+          <rect x="-6" y="-5" width="27" height="10" fill="#c28b4e"/>
+          <rect x="15" y="5" width="6" height="4" fill="#c28b4e"/>
+          <rect x="18" y="9" width="3" height="5" fill="#c28b4e"/>
+        </g>
+        <line x1="41" y1="38.4" x2="64" y2="89.6" stroke="#e2e8f0" stroke-width="21.8" stroke-linecap="round"/>
+        <line x1="87" y1="38.4" x2="64" y2="89.6" stroke="#e2e8f0" stroke-width="21.8" stroke-linecap="round"/>
+      </svg>
+      <p>locked 128px</p>
+    </div>
+
+    <div class="cell">
+      <svg viewBox="0 0 128 128" width="38" height="38" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="bg3" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#2f6bf3"/>
+            <stop offset="1" stop-color="#1e3a8a"/>
+          </linearGradient>
+        </defs>
+        <rect x="3.8" y="3.8" width="120.4" height="120.4" rx="28" fill="url(#bg3)"/>
+        <g transform="translate(64 64) rotate(-45)">
+          <circle cx="-20" cy="0" r="17" fill="none" stroke="#f59e0b" stroke-width="13"/>
+          <rect x="-6" y="-5" width="27" height="10" fill="#f59e0b"/>
+          <rect x="15" y="5" width="6" height="4" fill="#f59e0b"/>
+          <rect x="18" y="9" width="3" height="5" fill="#f59e0b"/>
+        </g>
+        <line x1="41" y1="38.4" x2="64" y2="89.6" stroke="#ffffff" stroke-width="21.8" stroke-linecap="round"/>
+        <line x1="87" y1="38.4" x2="64" y2="89.6" stroke="#ffffff" stroke-width="21.8" stroke-linecap="round"/>
+      </svg>
+      <p>工具栏 38px 实际尺寸</p>
+    </div>
+  </div>
+</div>
+
+<style>
+  :root {
+    --text: #0f172a;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --surface: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --border: #334155;
+      --surface: #1e293b;
+    }
+  }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--surface);
+    color: var(--text);
+  }
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 40px 24px;
+  }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  .sub { color: var(--muted); margin: 0 0 28px; font-size: 14px; }
+  .row { display: flex; gap: 40px; flex-wrap: wrap; align-items: flex-start; }
+  .cell { text-align: center; }
+  .cell svg {
+    border-radius: 14px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+    display: block;
+  }
+  .cell p { margin: 10px 0 0; font-size: 12px; color: var(--muted); }
+</style>

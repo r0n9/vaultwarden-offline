@@ -12,9 +12,27 @@ import { resolve } from "node:path";
 
 const OUT_DIR = resolve(import.meta.dirname, "../public/images");
 
+/**
+ * 配色。bg 为垂直渐变（上 → 下）。
+ *
+ * 方案 B：深蓝渐变底 + 金色钥匙（45° 斜放）+ 白色 V 覆盖。
+ * 钥匙 = 解锁密码库，V = Vaultwarden 品牌字。
+ */
 const THEMES = {
-  normal: { bg: [0x1d, 0x4e, 0xd8], glyph: [0xff, 0xff, 0xff] },
-  locked: { bg: [0x47, 0x55, 0x69], glyph: [0xe2, 0xe8, 0xf0] },
+  normal: {
+    bgTop: [0x2f, 0x6b, 0xf3],
+    bgBottom: [0x1e, 0x3a, 0x8a],
+    key: [0xf5, 0x9e, 0x0b],
+    keyShadow: [0xd9, 0x77, 0x06],
+    glyph: [0xff, 0xff, 0xff],
+  },
+  locked: {
+    bgTop: [0x64, 0x74, 0x8b],
+    bgBottom: [0x47, 0x55, 0x69],
+    key: [0xc2, 0x8b, 0x4e],
+    keyShadow: [0xa1, 0x6f, 0x3d],
+    glyph: [0xe2, 0xe8, 0xf0],
+  },
 };
 
 const SIZES = [16, 19, 32, 38, 48, 96, 128];
@@ -101,13 +119,55 @@ function distanceToSegment(px, py, ax, ay, bx, by) {
   return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
 }
 
-/** 字母 V：两段加粗线段。 */
+/** 字母 V：两段加粗线段（白色，覆盖在钥匙上方）。 */
 function insideGlyph(x, y) {
-  const halfWidth = 0.075;
+  const halfWidth = 0.085;
   return (
-    distanceToSegment(x, y, 0.3, 0.29, 0.5, 0.72) <= halfWidth ||
-    distanceToSegment(x, y, 0.7, 0.29, 0.5, 0.72) <= halfWidth
+    distanceToSegment(x, y, 0.32, 0.30, 0.5, 0.70) <= halfWidth ||
+    distanceToSegment(x, y, 0.68, 0.30, 0.5, 0.70) <= halfWidth
   );
+}
+
+/** 钥匙本地坐标判定：环在左、杆向右、齿在杆末端。坐标以钥匙中心为原点。 */
+function insideKeyShape(x, y) {
+  // 钥匙环
+  const ringDx = x - -0.2;
+  const ringDy = y - 0;
+  const ringDist = Math.hypot(ringDx, ringDy);
+  if (ringDist <= 0.17 && ringDist >= 0.105) {
+    return true;
+  }
+  // 钥匙杆
+  if (x >= -0.06 && x <= 0.21 && y >= -0.05 && y <= 0.05) {
+    return true;
+  }
+  // 齿纹（杆末端下方两齿）
+  if (x >= 0.15 && x <= 0.21 && y >= 0.05 && y <= 0.09) {
+    return true;
+  }
+  if (x >= 0.18 && x <= 0.21 && y >= 0.09 && y <= 0.14) {
+    return true;
+  }
+  return false;
+}
+
+/** 把采样点旋转到钥匙的本地坐标系（钥匙斜放 -45°）。 */
+function rotateToKeySpace(x, y) {
+  const dx = x - 0.5;
+  const dy = y - 0.5;
+  const angle = (-45 * Math.PI) / 180;
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  return {
+    x: dx * cos - dy * sin,
+    y: dx * sin + dy * cos,
+  };
+}
+
+/** 是否落在钥匙上。上半部略收窄，让 V 的白色有更多露出的空间。 */
+function insideKey(x, y) {
+  const local = rotateToKeySpace(x, y);
+  return insideKeyShape(local.x, local.y * 1.12);
 }
 
 function renderIcon(size, theme) {
@@ -131,7 +191,23 @@ function renderIcon(size, theme) {
             continue;
           }
           covered++;
-          const color = insideGlyph(x, y) ? theme.glyph : theme.bg;
+
+          let color;
+          if (insideGlyph(x, y)) {
+            color = theme.glyph;
+          } else if (insideKey(x, y)) {
+            // 钥匙下缘加一点暗色，给斜放的钥匙一点立体感。
+            color = y > 0.55 ? theme.keyShadow : theme.key;
+          } else {
+            // 底色做垂直渐变。
+            const t = Math.min(Math.max((y - 0.03) / 0.94, 0), 1);
+            color = [
+              Math.round(theme.bgTop[0] + (theme.bgBottom[0] - theme.bgTop[0]) * t),
+              Math.round(theme.bgTop[1] + (theme.bgBottom[1] - theme.bgTop[1]) * t),
+              Math.round(theme.bgTop[2] + (theme.bgBottom[2] - theme.bgTop[2]) * t),
+            ];
+          }
+
           r += color[0];
           g += color[1];
           b += color[2];
