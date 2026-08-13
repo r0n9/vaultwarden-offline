@@ -41,6 +41,22 @@ describe("baseDomain", () => {
     expect(baseDomain("https://alice.co.uk")).not.toBe(baseDomain("https://bob.co.uk"));
   });
 
+  it("未收录后缀但属注册局组合时按三段处理", () => {
+    // 回归：example.com.ua 曾被归一化成 com.ua，导致 alice.com.ua 与
+    // bob.com.ua 被当成同一站点——把不同站点合并是安全问题。
+    expect(baseDomain("https://shop.example.com.ua")).toBe("example.com.ua");
+    expect(baseDomain("https://alice.com.ua")).not.toBe(baseDomain("https://bob.com.ua"));
+    expect(baseDomain("https://shop.example.co.id")).toBe("example.co.id");
+    expect(baseDomain("https://example.org.pl")).toBe("example.org.pl");
+    expect(baseDomain("https://mail.example.edu.cn")).toBe("example.edu.cn");
+  });
+
+  it("非注册局段的多段域名按两段处理", () => {
+    // a.foo.xyz 中 foo 不是注册局段，注册域就是 foo.xyz。
+    expect(baseDomain("https://a.foo.xyz")).toBe("foo.xyz");
+    expect(baseDomain("https://a.example.dev")).toBe("example.dev");
+  });
+
   it("IP 地址整体作为标识", () => {
     expect(baseDomain("http://192.168.1.1:8080/admin")).toBe("192.168.1.1");
   });

@@ -9,12 +9,19 @@ import type { CipherView } from "./models";
  */
 
 /**
- * 取「二级域+顶级域」。
+ * 取「注册域+顶级域」。
  *
  * 正确处理 `example.co.uk` 这类两段式后缀需要完整的公共后缀列表（PSL），
- * 那是个上百 KB 的表。这里用一份常见两段后缀的精简表覆盖绝大多数情况——
- * 判断偏严会导致漏匹配（用户手动搜一下即可），偏松则会把 `a.co.uk` 与
- * `b.co.uk` 当成同一站点，那是安全问题，因此宁可偏严。
+ * 那是个上百 KB 的表。这里用两层启发式替代：
+ *
+ *   1. 常见两段后缀精确表（co.uk / com.cn / com.au …）
+ *   2. 注册局段启发式：若倒数第二段是常见的注册局段（com/net/org/co/edu…），
+ *      则按 `x.<注册局>.<ccTLD>` 结构取三段
+ *
+ * 第 2 层**必须要有**：若只靠精确表，`example.com.ua` 这类未收录组合会被
+ * 归一化成 `com.ua`，于是 `alice.com.ua` 与 `bob.com.ua` 被当成同一个站点——
+ * 那是把不同站点合并，属于安全问题（钓鱼场景）。这比「漏匹配」严重得多：
+ * 漏匹配用户手动搜一下即可，合并站点会让 A 站的条目出现在 B 站。
  */
 const TWO_PART_SUFFIXES = new Set([
   "co.uk", "org.uk", "ac.uk", "gov.uk", "me.uk", "net.uk",
@@ -24,6 +31,12 @@ const TWO_PART_SUFFIXES = new Set([
   "co.jp", "or.jp", "ne.jp", "ac.jp", "go.jp",
   "co.kr", "or.kr", "co.nz", "co.za", "co.in", "co.il",
   "com.sg", "com.my", "com.ph", "com.vn", "com.pk",
+]);
+
+/** 常见注册局段：`x.<段>.<ccTLD>` 结构中的中间段。 */
+const REGISTRY_SEGMENTS = new Set([
+  "com", "net", "org", "co", "edu", "gov", "ac", "me", "or", "ne", "go",
+  "mil", "int", "info", "biz", "name", "pro", "asia", "mobi", "tv", "id",
 ]);
 
 export function extractHostname(url: string): string | undefined {
@@ -58,7 +71,19 @@ export function baseDomain(url: string): string | undefined {
   }
 
   const lastTwo = parts.slice(-2).join(".");
-  return TWO_PART_SUFFIXES.has(lastTwo) ? parts.slice(-3).join(".") : lastTwo;
+
+  if (TWO_PART_SUFFIXES.has(lastTwo)) {
+    return parts.slice(-3).join(".");
+  }
+
+  // 未收录的组合走启发式：倒数第二段是注册局段，说明是 `x.<注册局>.<ccTLD>`。
+  // 例如 `shop.example.com.ua` → `example.com.ua`，而不是错误地归成 `com.ua`。
+  const registrySegment = parts[parts.length - 2];
+  if (parts.length > 2 && registrySegment != null && REGISTRY_SEGMENTS.has(registrySegment)) {
+    return parts.slice(-3).join(".");
+  }
+
+  return lastTwo;
 }
 
 function hostWithPort(url: string): string | undefined {
