@@ -130,7 +130,8 @@ function insideShield(x, y) {
   const topY = 0.16;
   const bottomY = 0.80;
   const halfW = 0.30;
-  const waistY = topY + (bottomY - topY) * 0.55;
+  // 腰部下移到 62% 高度：上半部更饱满，下半部更短、收窄更晚。
+  const waistY = topY + (bottomY - topY) * 0.62;
 
   if (y < topY || y > bottomY) {
     return false;
@@ -141,9 +142,9 @@ function insideShield(x, y) {
     return Math.abs(x - cx) <= halfW;
   }
 
-  // 下半部：0.8 次幂曲线收口——比直线（1 次）稍凸、比椭圆弧（0.5 次）更尖。
+  // 下半部：0.9 次幂曲线收口——接近直线，收窄平缓、不提前收太多。
   const t = (y - waistY) / (bottomY - waistY);
-  const width = halfW * Math.pow(1 - t, 0.8);
+  const width = halfW * Math.pow(1 - t, 0.9);
   return Math.abs(x - cx) <= width;
 }
 
