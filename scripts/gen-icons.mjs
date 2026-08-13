@@ -203,13 +203,8 @@ function renderIcon(size, theme) {
             if (insideKeyhole(x, y)) {
               color = theme.keyhole;
             } else {
-              // 盾牌水平渐变：左亮右暗（光源在左）。
-              const t = Math.min(Math.max((x - 0.2) / 0.6, 0), 1);
-              color = [
-                Math.round(theme.shieldLight[0] + (theme.shieldDark[0] - theme.shieldLight[0]) * t),
-                Math.round(theme.shieldLight[1] + (theme.shieldDark[1] - theme.shieldLight[1]) * t),
-                Math.round(theme.shieldLight[2] + (theme.shieldDark[2] - theme.shieldLight[2]) * t),
-              ];
+              // 盾牌左右硬分割：中间一条竖线，左亮右暗（无渐变过渡）。
+              color = x < 0.5 ? theme.shieldLight : theme.shieldDark;
             }
           } else {
             // 底色做垂直渐变。
