@@ -2,7 +2,13 @@
   import { CipherType } from "@/core/vault/enums";
   import type { CipherView, FolderView } from "@/core/vault/models";
   import { cipherMatchesUrl } from "@/core/vault/uri-matching";
-  import { CIPHER_TYPE_LABELS, cipherSubtitle, filterCiphers, sortCiphers } from "@/core/vault/vault-search";
+  import {
+    CIPHER_TYPE_LABELS,
+    cipherSubtitle,
+    filterCiphers,
+    sortCiphers,
+    sortCiphersForUrl,
+  } from "@/core/vault/vault-search";
 
   import CipherIcon from "../components/CipherIcon.svelte";
 
@@ -38,7 +44,8 @@
   const visible = $derived.by(() => {
     if (scope === "site") {
       const base = query.trim() === "" ? siteMatches : filterCiphers(siteMatches, { query });
-      return sortCiphers(base);
+      // 当前站点列表按域名层级精度排序：精确匹配 > 父域 > 仅注册域相同。
+      return activeUrl == null ? sortCiphers(base) : sortCiphersForUrl(base, activeUrl);
     }
 
     return sortCiphers(

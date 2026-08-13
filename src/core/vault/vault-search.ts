@@ -1,5 +1,6 @@
 import { CipherType } from "./enums";
 import type { CipherView } from "./models";
+import { baseDomain, extractHostname } from "./uri-matching";
 
 /**
  * 搜索、排序与展示辅助。
@@ -124,4 +125,75 @@ export function sortCiphers(ciphers: CipherView[]): CipherView[] {
     }
     return a.name.localeCompare(b.name, "zh-Hans-CN");
   });
+}
+
+/**
+ * 针对当前站点的匹配排序：域名层级越精确排越前，同级再按收藏、名称。
+ *
+ * 以站点 `mail.example.com` 为例，条目 URI 的精度从高到低：
+ *   4  host 完全相等          `mail.example.com`      ← 用户此刻就在这个地址
+ *   3  条目的 host 是父域      `example.com`           ← 二级，宽一级
+ *   2  条目的 host 是子域      `a.mail.example.com`    ← 更具体，但不是当前地址
+ *   1  仅注册域相同            `example.org` 与 example.com 同域…（按 baseDomain）
+ *
+ * 用户表述的「三级 > 二级 > 一级」对应这里的 4 > 3 > 1：
+ * 先给用户最可能想要的那条，而不是让名称排序把精确匹配挤到后面。
+ */
+export function sortCiphersForUrl(ciphers: CipherView[], url: string): CipherView[] {
+  const targetHost = extractHostname(url);
+  const targetBase = targetHost == null ? undefined : baseDomain(url);
+
+  return [...ciphers].sort((a, b) => {
+    const precisionA = matchPrecision(a, targetHost, targetBase);
+    const precisionB = matchPrecision(b, targetHost, targetBase);
+
+    if (precisionA !== precisionB) {
+      return precisionB - precisionA;
+    }
+    if (a.favorite !== b.favorite) {
+      return a.favorite ? -1 : 1;
+    }
+    return a.name.localeCompare(b.name, "zh-Hans-CN");
+  });
+}
+
+/** 取条目所有 URI 中最高的匹配精度。 */
+function matchPrecision(
+  cipher: CipherView,
+  targetHost: string | undefined,
+  targetBase: string | undefined,
+): number {
+  if (targetHost == null || targetBase == null) {
+    return 0;
+  }
+
+  let best = 0;
+  for (const entry of cipher.login?.uris ?? []) {
+    if (entry.uri == null) {
+      continue;
+    }
+
+    const uriHost = extractHostname(entry.uri);
+    if (uriHost == null) {
+      continue;
+    }
+
+    let score = 0;
+    if (uriHost === targetHost) {
+      score = 4;
+    } else if (targetHost.endsWith(`.${uriHost}`)) {
+      // 条目是父域：example.com 之于 mail.example.com。
+      score = 3;
+    } else if (uriHost.endsWith(`.${targetHost}`)) {
+      // 条目是子域：a.mail.example.com 之于 mail.example.com。
+      score = 2;
+    } else if (baseDomain(entry.uri) === targetBase) {
+      // 仅注册域相同（不同子域，如 gist.github.com 之于 github.com）。
+      score = 1;
+    }
+
+    best = Math.max(best, score);
+  }
+
+  return best;
 }

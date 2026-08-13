@@ -20,7 +20,7 @@ import {
   softDeleteCipher,
   toggleFavorite,
 } from "./vault-repository";
-import { filterCiphers, sortCiphers } from "./vault-search";
+import { filterCiphers, sortCiphers, sortCiphersForUrl } from "./vault-search";
 
 const FAST_KDF: KdfConfig = { type: KdfType.PBKDF2_SHA256, iterations: 5_000 };
 
@@ -244,5 +244,89 @@ describe("筛选与排序", () => {
     const sorted = sortCiphers([plainFirst, favoriteLast, plainMiddle]);
 
     expect(sorted.map((c) => c.name)).toEqual(["Zebra", "Alpha", "Beta"]);
+  });
+
+  it("站点匹配排序：域名层级越精确排越前", () => {
+    // 用户表述的「三级 > 二级 > 一级」：精确 host > 父域 > 仅注册域相同。
+    const url = "https://mail.example.com";
+    const exact = {
+      ...items[0]!,
+      name: "精确（mail.example.com）",
+      login: { uris: [{ uri: "https://mail.example.com" }] },
+    };
+    const parent = {
+      ...items[1]!,
+      name: "父域（example.com）",
+      login: { uris: [{ uri: "https://example.com" }] },
+    };
+    const baseOnly = {
+      ...items[3]!,
+      name: "仅注册域（example.org）",
+      login: { uris: [{ uri: "https://example.org" }] },
+    };
+
+    const sorted = sortCiphersForUrl([parent, baseOnly, exact], url);
+
+    expect(sorted.map((c) => c.name)).toEqual(["精确（mail.example.com）", "父域（example.com）", "仅注册域（example.org）"]);
+  });
+
+  it("站点匹配排序：精确匹配优先于收藏", () => {
+    // 精度是主键，收藏只是同精度内的次键——否则收藏的父域条目
+    // 会把精确匹配挤到第二位，用户最想要的那条反而沉下去。
+    const url = "https://mail.example.com";
+    const exact = {
+      ...items[0]!,
+      name: "精确",
+      favorite: false,
+      login: { uris: [{ uri: "https://mail.example.com" }] },
+    };
+    const favoritedParent = {
+      ...items[1]!,
+      name: "父域但收藏",
+      favorite: true,
+      login: { uris: [{ uri: "https://example.com" }] },
+    };
+
+    const sorted = sortCiphersForUrl([favoritedParent, exact], url);
+
+    expect(sorted.map((c) => c.name)).toEqual(["精确", "父域但收藏"]);
+  });
+
+  it("站点匹配排序：子域条目排在仅注册域之前", () => {
+    const url = "https://mail.example.com";
+    const subdomain = {
+      ...items[0]!,
+      name: "子域（a.mail.example.com）",
+      login: { uris: [{ uri: "https://a.mail.example.com" }] },
+    };
+    const baseOnly = {
+      ...items[1]!,
+      name: "仅注册域",
+      login: { uris: [{ uri: "https://example.org" }] },
+    };
+
+    const sorted = sortCiphersForUrl([baseOnly, subdomain], url);
+
+    expect(sorted.map((c) => c.name)).toEqual(["子域（a.mail.example.com）", "仅注册域"]);
+  });
+
+  it("站点匹配排序：同精度内按收藏与名称", () => {
+    const url = "https://example.com";
+    const favorited = {
+      ...items[0]!,
+      name: "Zebra",
+      favorite: true,
+      login: { uris: [{ uri: "https://example.com" }] },
+    };
+    const plain = {
+      ...items[1]!,
+      name: "Alpha",
+      favorite: false,
+      login: { uris: [{ uri: "https://example.com" }] },
+    };
+
+    const sorted = sortCiphersForUrl([plain, favorited], url);
+
+    expect(sorted.map((c) => c.name)).toEqual(["Zebra", "Alpha"]);
   });
 });

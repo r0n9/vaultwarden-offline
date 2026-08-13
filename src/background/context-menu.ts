@@ -3,7 +3,7 @@ import { VaultStatus } from "@/core/state/vault-status";
 import { decryptCipher } from "@/core/vault/cipher-encryption";
 import { cipherMatchesUrl } from "@/core/vault/uri-matching";
 import type { CipherView } from "@/core/vault/models";
-import { sortCiphers } from "@/core/vault/vault-search";
+import { sortCiphersForUrl } from "@/core/vault/vault-search";
 import { getStatus, readVaultData, requireUserKey } from "@/core/vault/vault.service";
 import { api, runtime, t } from "@/platform/browser-api";
 import { logger } from "@/platform/logger";
@@ -123,10 +123,10 @@ export async function findMatchingLoginCiphers(
     }
   }
 
-  // 排序复用 vault-search 的 sortCiphers（收藏优先、名称次之）。
+  // 排序复用 vault-search 的 sortCiphersForUrl（域名层级精度优先，同级再收藏、名称）。
   // 两处各自实现同样的排序迟早会漂移——快捷键回退和右键菜单
   // 都靠「列表第一条」取目标条目，排序一旦不一致就会填错。
-  return sortCiphers(matches).slice(0, MAX_MENU_ITEMS);
+  return sortCiphersForUrl(matches, url).slice(0, MAX_MENU_ITEMS);
 }
 
 export function registerContextMenu(storage: VaultStorage): void {
