@@ -124,7 +124,7 @@ function distanceToSegment(px, py, ax, ay, bx, by) {
   return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
 }
 
-/** 盾牌形：上半部矩形（仅顶部两角圆、腰部直角），下半部以四分之一椭圆弧收口。 */
+/** 盾牌形：上半部矩形（顶部与腰部均为直角），下半部以接近直线的曲线收口（微尖）。 */
 function insideShield(x, y) {
   const cx = 0.5;
   const topY = 0.16;
@@ -137,25 +137,13 @@ function insideShield(x, y) {
   }
 
   if (y <= waistY) {
-    // 上半部：矩形，只有顶部两个角是圆的
-    const minX = cx - halfW;
-    const maxX = cx + halfW;
-    if (x < minX || x > maxX) {
-      return false;
-    }
-    const radius = 0.10;
-    if (y < topY + radius) {
-      // 顶部角区：以 (rx, topY+radius) 为圆心的圆弧判定
-      const rx = Math.min(Math.max(x, minX + radius), maxX - radius);
-      return Math.hypot(x - rx, y - (topY + radius)) <= radius;
-    }
-    // 腰部以下直边（无圆角）
-    return true;
+    // 上半部：纯矩形，四个角都是直角
+    return Math.abs(x - cx) <= halfW;
   }
 
-  // 下半部：四分之一椭圆弧收口
+  // 下半部：0.8 次幂曲线收口——比直线（1 次）稍凸、比椭圆弧（0.5 次）更尖。
   const t = (y - waistY) / (bottomY - waistY);
-  const width = halfW * Math.sqrt(1 - t * t);
+  const width = halfW * Math.pow(1 - t, 0.8);
   return Math.abs(x - cx) <= width;
 }
 
