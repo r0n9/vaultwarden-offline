@@ -2,7 +2,7 @@
 
 <div class="wrap">
   <h1>Vaultwarden Offline · 新图标</h1>
-  <p class="sub">方案 B：深蓝渐变底 + 金色钥匙（45°）+ 白色 V —— 钥匙=解锁密码库，V=品牌</p>
+  <p class="sub">盾牌 + 钥匙孔 —— 参考 Bitwarden（蓝底白盾）与 1Password（钥匙孔），无字母</p>
 
   <div class="row">
     <div class="cell">
@@ -14,14 +14,19 @@
           </linearGradient>
         </defs>
         <rect x="3.8" y="3.8" width="120.4" height="120.4" rx="28" fill="url(#bg)"/>
-        <g transform="translate(64 64) rotate(-45)">
-          <circle cx="-20" cy="0" r="17" fill="none" stroke="#f59e0b" stroke-width="13"/>
-          <rect x="-6" y="-5" width="27" height="10" fill="#f59e0b"/>
-          <rect x="15" y="5" width="6" height="4" fill="#f59e0b"/>
-          <rect x="18" y="9" width="3" height="5" fill="#f59e0b"/>
-        </g>
-        <line x1="41" y1="38.4" x2="64" y2="89.6" stroke="#ffffff" stroke-width="21.8" stroke-linecap="round"/>
-        <line x1="87" y1="38.4" x2="64" y2="89.6" stroke="#ffffff" stroke-width="21.8" stroke-linecap="round"/>
+        <path d="M 25.6 20.5
+                 H 102.4
+                 Q 107.5 20.5 107.5 25.6
+                 V 57.6
+                 Q 107.5 63 102.4 65.5
+                 L 64 102.4
+                 L 25.6 65.5
+                 Q 20.5 63 20.5 57.6
+                 V 25.6
+                 Q 20.5 20.5 25.6 20.5 Z"
+              fill="#ffffff"/>
+        <circle cx="64" cy="51.2" r="10.9" fill="#1e3a8a"/>
+        <path d="M 53.4 58.2 L 74.6 58.2 L 70.2 76.8 L 57.8 76.8 Z" fill="#1e3a8a"/>
       </svg>
       <p>normal 128px</p>
     </div>
@@ -35,14 +40,19 @@
           </linearGradient>
         </defs>
         <rect x="3.8" y="3.8" width="120.4" height="120.4" rx="28" fill="url(#bg2)"/>
-        <g transform="translate(64 64) rotate(-45)">
-          <circle cx="-20" cy="0" r="17" fill="none" stroke="#c28b4e" stroke-width="13"/>
-          <rect x="-6" y="-5" width="27" height="10" fill="#c28b4e"/>
-          <rect x="15" y="5" width="6" height="4" fill="#c28b4e"/>
-          <rect x="18" y="9" width="3" height="5" fill="#c28b4e"/>
-        </g>
-        <line x1="41" y1="38.4" x2="64" y2="89.6" stroke="#e2e8f0" stroke-width="21.8" stroke-linecap="round"/>
-        <line x1="87" y1="38.4" x2="64" y2="89.6" stroke="#e2e8f0" stroke-width="21.8" stroke-linecap="round"/>
+        <path d="M 25.6 20.5
+                 H 102.4
+                 Q 107.5 20.5 107.5 25.6
+                 V 57.6
+                 Q 107.5 63 102.4 65.5
+                 L 64 102.4
+                 L 25.6 65.5
+                 Q 20.5 63 20.5 57.6
+                 V 25.6
+                 Q 20.5 20.5 25.6 20.5 Z"
+              fill="#e2e8f0"/>
+        <circle cx="64" cy="51.2" r="10.9" fill="#3f4c5e"/>
+        <path d="M 53.4 58.2 L 74.6 58.2 L 70.2 76.8 L 57.8 76.8 Z" fill="#3f4c5e"/>
       </svg>
       <p>locked 128px</p>
     </div>
@@ -56,14 +66,19 @@
           </linearGradient>
         </defs>
         <rect x="3.8" y="3.8" width="120.4" height="120.4" rx="28" fill="url(#bg3)"/>
-        <g transform="translate(64 64) rotate(-45)">
-          <circle cx="-20" cy="0" r="17" fill="none" stroke="#f59e0b" stroke-width="13"/>
-          <rect x="-6" y="-5" width="27" height="10" fill="#f59e0b"/>
-          <rect x="15" y="5" width="6" height="4" fill="#f59e0b"/>
-          <rect x="18" y="9" width="3" height="5" fill="#f59e0b"/>
-        </g>
-        <line x1="41" y1="38.4" x2="64" y2="89.6" stroke="#ffffff" stroke-width="21.8" stroke-linecap="round"/>
-        <line x1="87" y1="38.4" x2="64" y2="89.6" stroke="#ffffff" stroke-width="21.8" stroke-linecap="round"/>
+        <path d="M 25.6 20.5
+                 H 102.4
+                 Q 107.5 20.5 107.5 25.6
+                 V 57.6
+                 Q 107.5 63 102.4 65.5
+                 L 64 102.4
+                 L 25.6 65.5
+                 Q 20.5 63 20.5 57.6
+                 V 25.6
+                 Q 20.5 20.5 25.6 20.5 Z"
+              fill="#ffffff"/>
+        <circle cx="64" cy="51.2" r="10.9" fill="#1e3a8a"/>
+        <path d="M 53.4 58.2 L 74.6 58.2 L 70.2 76.8 L 57.8 76.8 Z" fill="#1e3a8a"/>
       </svg>
       <p>工具栏 38px 实际尺寸</p>
     </div>
@@ -74,14 +89,12 @@
   :root {
     --text: #0f172a;
     --muted: #64748b;
-    --border: #e2e8f0;
     --surface: #ffffff;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --text: #f1f5f9;
       --muted: #94a3b8;
-      --border: #334155;
       --surface: #1e293b;
     }
   }

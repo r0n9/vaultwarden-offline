@@ -15,23 +15,21 @@ const OUT_DIR = resolve(import.meta.dirname, "../public/images");
 /**
  * 配色。bg 为垂直渐变（上 → 下）。
  *
- * 方案 B：深蓝渐变底 + 金色钥匙（45° 斜放）+ 白色 V 覆盖。
- * 钥匙 = 解锁密码库，V = Vaultwarden 品牌字。
+ * 盾牌 + 钥匙孔：参考 Bitwarden（蓝底白盾）与 1Password（钥匙孔）——
+ * 无字母，安全语义直接。盾 = 防护，钥匙孔 = 解锁密码库。
  */
 const THEMES = {
   normal: {
     bgTop: [0x2f, 0x6b, 0xf3],
     bgBottom: [0x1e, 0x3a, 0x8a],
-    key: [0xf5, 0x9e, 0x0b],
-    keyShadow: [0xd9, 0x77, 0x06],
-    glyph: [0xff, 0xff, 0xff],
+    shield: [0xff, 0xff, 0xff],
+    keyhole: [0x1d, 0x3a, 0x8a],
   },
   locked: {
     bgTop: [0x64, 0x74, 0x8b],
     bgBottom: [0x47, 0x55, 0x69],
-    key: [0xc2, 0x8b, 0x4e],
-    keyShadow: [0xa1, 0x6f, 0x3d],
-    glyph: [0xe2, 0xe8, 0xf0],
+    shield: [0xe2, 0xe8, 0xf0],
+    keyhole: [0x3f, 0x4c, 0x5e],
   },
 };
 
@@ -119,55 +117,57 @@ function distanceToSegment(px, py, ax, ay, bx, by) {
   return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
 }
 
-/** 字母 V：两段加粗线段（白色，覆盖在钥匙上方）。 */
-function insideGlyph(x, y) {
-  const halfWidth = 0.085;
-  return (
-    distanceToSegment(x, y, 0.32, 0.30, 0.5, 0.70) <= halfWidth ||
-    distanceToSegment(x, y, 0.68, 0.30, 0.5, 0.70) <= halfWidth
-  );
+/** 盾牌形：上半部圆角矩形，下半部收口到尖。坐标归一化到 [0,1]。 */
+function insideShield(x, y) {
+  const cx = 0.5;
+  const topY = 0.16;
+  const bottomY = 0.80;
+  const halfW = 0.30;
+  const waistY = topY + (bottomY - topY) * 0.55;
+
+  if (y < topY || y > bottomY) {
+    return false;
+  }
+
+  if (y <= waistY) {
+    // 上半部：圆角矩形
+    const minX = cx - halfW;
+    const maxX = cx + halfW;
+    if (x < minX || x > maxX) {
+      return false;
+    }
+    const radius = 0.07;
+    const rx = Math.min(Math.max(x, minX + radius), maxX - radius);
+    const ry = Math.min(Math.max(y, topY + radius), waistY - radius);
+    return Math.hypot(x - rx, y - ry) <= radius;
+  }
+
+  // 下半部：线性收口到底部尖点
+  const t = (y - waistY) / (bottomY - waistY);
+  const width = halfW * (1 - t);
+  return Math.abs(x - cx) <= width;
 }
 
-/** 钥匙本地坐标判定：环在左、杆向右、齿在杆末端。坐标以钥匙中心为原点。 */
-function insideKeyShape(x, y) {
-  // 钥匙环
-  const ringDx = x - -0.2;
-  const ringDy = y - 0;
-  const ringDist = Math.hypot(ringDx, ringDy);
-  if (ringDist <= 0.17 && ringDist >= 0.105) {
+/** 钥匙孔：圆孔 + 向下渐宽的槽。 */
+function insideKeyhole(x, y) {
+  const cx = 0.5;
+  const cy = 0.40;
+  const radius = 0.085;
+
+  if (Math.hypot(x - cx, y - cy) <= radius) {
     return true;
   }
-  // 钥匙杆
-  if (x >= -0.06 && x <= 0.21 && y >= -0.05 && y <= 0.05) {
-    return true;
+
+  const slotHalfW = 0.042;
+  const slotTop = cy + radius * 0.55;
+  const slotBottom = 0.60;
+  if (y >= slotTop && y <= slotBottom) {
+    const t = (y - slotTop) / (slotBottom - slotTop);
+    const width = slotHalfW * (1 + t * 0.8);
+    return Math.abs(x - cx) <= width;
   }
-  // 齿纹（杆末端下方两齿）
-  if (x >= 0.15 && x <= 0.21 && y >= 0.05 && y <= 0.09) {
-    return true;
-  }
-  if (x >= 0.18 && x <= 0.21 && y >= 0.09 && y <= 0.14) {
-    return true;
-  }
+
   return false;
-}
-
-/** 把采样点旋转到钥匙的本地坐标系（钥匙斜放 -45°）。 */
-function rotateToKeySpace(x, y) {
-  const dx = x - 0.5;
-  const dy = y - 0.5;
-  const angle = (-45 * Math.PI) / 180;
-  const cos = Math.cos(angle);
-  const sin = Math.sin(angle);
-  return {
-    x: dx * cos - dy * sin,
-    y: dx * sin + dy * cos,
-  };
-}
-
-/** 是否落在钥匙上。上半部略收窄，让 V 的白色有更多露出的空间。 */
-function insideKey(x, y) {
-  const local = rotateToKeySpace(x, y);
-  return insideKeyShape(local.x, local.y * 1.12);
 }
 
 function renderIcon(size, theme) {
@@ -193,11 +193,8 @@ function renderIcon(size, theme) {
           covered++;
 
           let color;
-          if (insideGlyph(x, y)) {
-            color = theme.glyph;
-          } else if (insideKey(x, y)) {
-            // 钥匙下缘加一点暗色，给斜放的钥匙一点立体感。
-            color = y > 0.55 ? theme.keyShadow : theme.key;
+          if (insideShield(x, y)) {
+            color = insideKeyhole(x, y) ? theme.keyhole : theme.shield;
           } else {
             // 底色做垂直渐变。
             const t = Math.min(Math.max((y - 0.03) / 0.94, 0), 1);
