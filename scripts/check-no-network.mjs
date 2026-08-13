@@ -34,6 +34,9 @@ const URL_ALLOWLIST = [
   // src/core/vault/uri-matching.ts 里给无协议 URI 补全前缀用的模板字面量
   // （`https://${trimmed}`），只喂给 URL 构造函数做解析，不发起请求。
   "https://${",
+  // popup 底部的 GitHub 仓库链接：用户主动点击才由浏览器打开，
+  // 扩展自身从不请求该地址。
+  "https://github.com/r0n9/",
 ];
 
 async function collectJsFiles(dir) {
