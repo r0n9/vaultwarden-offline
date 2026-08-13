@@ -32,6 +32,7 @@ import {
 import { browserVaultStorage as vaultStorage } from "@/platform/storage/browser-vault-storage";
 
 import { collectActiveTabFields } from "./autofill-collection";
+import { fillActiveTab } from "./autofill-fill";
 
 /**
  * 背景 service worker。
@@ -200,6 +201,9 @@ registerHandlers({
   },
 
   "autofill:collectActiveTab": async () => await collectActiveTabFields(),
+
+  "autofill:fillActiveTab": async ({ cipherId }) =>
+    await fillActiveTab(vaultStorage, cipherId),
 });
 
 // --- 生命周期与事件 -------------------------------------------------------

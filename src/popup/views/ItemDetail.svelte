@@ -3,6 +3,7 @@
   import type { CipherView, FolderView } from "@/core/vault/models";
   import { CIPHER_TYPE_LABELS } from "@/core/vault/vault-search";
   import { sendMessage } from "@/platform/messaging";
+  import type { AutofillFillResult } from "@/platform/messaging/types";
 
   import CipherIcon from "../components/CipherIcon.svelte";
   import CopyRow from "../components/CopyRow.svelte";
@@ -43,6 +44,25 @@
   let verifying = $state(false);
 
   let confirmingPurge = $state(false);
+
+  let filling = $state(false);
+  let fillResult = $state<AutofillFillResult | null>(null);
+
+  const canAutofill = $derived(
+    cipher.type === CipherType.Login &&
+      cipher.deletedDate == null &&
+      ((cipher.login?.username ?? "") !== "" || (cipher.login?.password ?? "") !== ""),
+  );
+
+  async function fillToPage() {
+    filling = true;
+    fillResult = null;
+    try {
+      fillResult = (await sendMessage("autofill:fillActiveTab", { cipherId: cipher.id })) ?? null;
+    } finally {
+      filling = false;
+    }
+  }
 
   const folderName = $derived(
     cipher.folderId == null ? undefined : folders.find((f) => f.id === cipher.folderId)?.name,
@@ -178,7 +198,31 @@
           <button class="btn btn-danger" onclick={() => (confirmingPurge = true)}>永久删除</button>
         {/if}
       {:else}
-        <button class="btn" onclick={onEdit}>编辑</button>
+        {#if canAutofill}
+          <button class="btn" onclick={fillToPage} disabled={filling}>
+            {filling ? "正在填充…" : "填充到当前页"}
+          </button>
+
+          {#if fillResult != null}
+            {#if fillResult.ok}
+              <p class="fill-ok">
+                已填充 {fillResult.filled} 个字段{fillResult.frames != null && fillResult.frames > 1
+                  ? `（跨 ${fillResult.frames} 个框架）`
+                  : ""}
+              </p>
+              {#if fillResult.urlMatches === false}
+                <p class="alert">
+                  注意：该条目保存的网址与当前站点不一致。确认这是你想登录的站点，
+                  钓鱼页面正是靠仿冒地址骗取密码。
+                </p>
+              {/if}
+            {:else}
+              <p class="alert">{fillResult.message}</p>
+            {/if}
+          {/if}
+        {/if}
+
+        <button class="btn btn-secondary" onclick={onEdit}>编辑</button>
         <button class="btn btn-danger" onclick={onDelete}>移入回收站</button>
       {/if}
     </div>
@@ -271,5 +315,14 @@
   .row {
     display: flex;
     gap: 8px;
+  }
+
+  .fill-ok {
+    margin: 0;
+    padding: 8px 10px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--success) 14%, transparent);
+    color: var(--success);
+    font-size: 12px;
   }
 </style>

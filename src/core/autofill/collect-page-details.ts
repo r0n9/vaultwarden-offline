@@ -24,11 +24,26 @@ import {
 /** `opid` 会被写回 DOM 元素，供后续填充阶段按标识找回元素。 */
 const OPID_PROPERTY = "opid";
 
-type FieldElement = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | HTMLSpanElement;
+export type FieldElement =
+  | HTMLInputElement
+  | HTMLTextAreaElement
+  | HTMLSelectElement
+  | HTMLSpanElement;
 
 export interface CollectOptions {
   document?: Document;
   visibility?: VisibilityChecker;
+}
+
+/**
+ * 按 DOM 顺序取出所有候选字段元素。
+ *
+ * 采集与填充**必须共用**这一个函数：字段的 opid 就是它在本列表中的下标，
+ * 填充阶段正是靠下标把 opid 还原成元素。两边各自实现查询，迟早会因为筛选
+ * 条件的细微差异而错位，把密码填进错误的框里。
+ */
+export function queryFieldElements(doc: Document = globalThis.document): FieldElement[] {
+  return queryFormAndFieldElements(doc).fieldElements;
 }
 
 export function collectPageDetails(options: CollectOptions = {}): AutofillPageDetails {

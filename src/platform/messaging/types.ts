@@ -88,6 +88,22 @@ export interface MessageContracts {
     request: undefined;
     response: AutofillCollectionResult;
   };
+  "autofill:fillActiveTab": {
+    request: { cipherId: string };
+    response: AutofillFillResult;
+  };
+}
+
+/** 一次填充的结果。 */
+export interface AutofillFillResult {
+  ok: boolean;
+  message?: string;
+  /** 实际写入的字段数。 */
+  filled: number;
+  /** 有字段被写入的框架数。 */
+  frames?: number;
+  /** 条目保存的网址是否与当前站点匹配。不匹配仍会填，但要提示用户。 */
+  urlMatches?: boolean;
 }
 
 /** 一次跨帧字段采集的结果。 */
