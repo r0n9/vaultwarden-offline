@@ -13,6 +13,8 @@ export const StorageKeys = {
   Settings: "vwo:settings",
   /** local：解锁失败节流状态。放 local 而非 session，重启浏览器不能绕过。 */
   UnlockThrottle: "vwo:vault:unlock-throttle",
+  /** local：最近一次填充过的登录条目 id，快捷键「填充上次使用」靠它。 */
+  LastUsedLogin: "vwo:last-used-login",
   /** session：解锁后的 UserKey，浏览器会话结束即消失。 */
   SessionUserKey: "vwo:session:userkey",
   /** session：最近一次活动时间戳，用于超时锁定判定。 */

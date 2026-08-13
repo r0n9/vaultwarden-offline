@@ -97,7 +97,7 @@ async function createRootMenu(): Promise<void> {
 }
 
 /** 筛选匹配当前站点的登录条目，收藏优先、按名称排序，最多取 8 条。 */
-async function findMatchingLoginCiphers(
+export async function findMatchingLoginCiphers(
   storage: VaultStorage,
   url: string | undefined,
 ): Promise<{ id: string; name: string }[]> {

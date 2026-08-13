@@ -10,6 +10,7 @@ import { CipherType } from "@/core/vault/enums";
 import type { CipherView } from "@/core/vault/models";
 import { cipherMatchesUrl } from "@/core/vault/uri-matching";
 import { getCipher } from "@/core/vault/vault-repository";
+import { setLastUsedLogin } from "@/core/vault/vault.service";
 import { api } from "@/platform/browser-api";
 import { logger } from "@/platform/logger";
 import type { AutofillFillResult } from "@/platform/messaging/types";
@@ -114,6 +115,11 @@ export async function fillTab(
       filled: 0,
       urlMatches,
     };
+  }
+
+  // 填充成功即记为「上次使用」——快捷键 Ctrl+Shift+L 要靠它找到目标条目。
+  if (filled > 0) {
+    await setLastUsedLogin(storage, cipherId);
   }
 
   return { ok: true, filled, frames: targetedFrames, urlMatches };

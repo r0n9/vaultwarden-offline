@@ -14,6 +14,7 @@ import {
   clearVault,
   createVault,
   getLastActivity,
+  getLastUsedLogin,
   getMeta,
   getSessionUserKey,
   getSettings,
@@ -23,6 +24,7 @@ import {
   readVaultData,
   requireUserKey,
   saveSettings,
+  setLastUsedLogin,
   touchActivity,
   unlock,
   writeVaultData,
@@ -269,6 +271,36 @@ describe("会话与活动时间", () => {
     await lock(storage);
 
     await expect(requireUserKey(storage)).rejects.toThrow(/锁定状态/);
+  });
+});
+
+describe("最近使用", () => {
+  it("记录后可读回", async () => {
+    await createVault(storage, "pw", { kdf: FAST_KDF });
+
+    expect(await getLastUsedLogin(storage)).toBeUndefined();
+
+    await setLastUsedLogin(storage, "cipher-1");
+    expect(await getLastUsedLogin(storage)).toBe("cipher-1");
+
+    await setLastUsedLogin(storage, "cipher-2");
+    expect(await getLastUsedLogin(storage)).toBe("cipher-2");
+  });
+
+  it("锁定不擦除记录——快捷键在下次解锁后仍能命中上次的条目", async () => {
+    await createVault(storage, "pw", { kdf: FAST_KDF });
+    await setLastUsedLogin(storage, "cipher-1");
+    await lock(storage);
+
+    expect(await getLastUsedLogin(storage)).toBe("cipher-1");
+  });
+
+  it("销毁密码库时一并清除", async () => {
+    await createVault(storage, "pw", { kdf: FAST_KDF });
+    await setLastUsedLogin(storage, "cipher-1");
+    await clearVault(storage);
+
+    expect(await getLastUsedLogin(storage)).toBeUndefined();
   });
 });
 

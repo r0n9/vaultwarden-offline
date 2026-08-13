@@ -10,6 +10,7 @@ import {
   clearVault,
   createVault,
   getLastActivity,
+  getLastUsedLogin,
   getMeta,
   getSettings,
   getStatus,
@@ -33,11 +34,12 @@ import { browserVaultStorage as vaultStorage } from "@/platform/storage/browser-
 
 import { collectActiveTabFields } from "./autofill-collection";
 import {
+  findMatchingLoginCiphers,
   refreshContextMenu,
   registerContextMenu,
   registerMenuRefreshTriggers,
 } from "./context-menu";
-import { fillActiveTab } from "./autofill-fill";
+import { fillActiveTab, fillTab } from "./autofill-fill";
 import { commitSave, handleSaveDetected } from "./save-detection";
 
 /**
@@ -303,6 +305,35 @@ api().commands.onCommand.addListener((command) => {
     void (async () => {
       await lock(vaultStorage);
       await currentStatusAndRefresh();
+    })();
+  }
+
+  if (command === "autofill_login") {
+    void (async () => {
+      // Ctrl+Shift+L：填充上次使用的登录项；没有记录或已失效时，
+      // 回退到当前站点匹配的第一条（收藏优先）。
+      if ((await getStatus(vaultStorage)) !== VaultStatus.Unlocked) {
+        return;
+      }
+
+      const [tab] = await api().tabs.query({ active: true, currentWindow: true });
+      if (tab?.id == null || tab.url == null) {
+        return;
+      }
+
+      const lastUsedId = await getLastUsedLogin(vaultStorage);
+      if (lastUsedId != null) {
+        const result = await fillActiveTab(vaultStorage, lastUsedId);
+        if (result.ok) {
+          return;
+        }
+      }
+
+      const matches = await findMatchingLoginCiphers(vaultStorage, tab.url);
+      const fallback = matches[0];
+      if (fallback != null) {
+        await fillTab(vaultStorage, fallback.id, tab);
+      }
     })();
   }
 });

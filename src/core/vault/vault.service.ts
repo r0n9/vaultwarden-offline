@@ -231,6 +231,8 @@ export async function clearVault(storage: VaultStorage): Promise<void> {
     StorageKeys.VaultMeta,
     StorageKeys.VaultData,
     StorageKeys.UnlockThrottle,
+    // 最近使用指向的条目已随库销毁，一并清掉，避免残留引用。
+    StorageKeys.LastUsedLogin,
   ]);
 }
 
@@ -305,6 +307,21 @@ export async function saveSettings(
   const merged = normalizeSettings({ ...(await getSettings(storage)), ...settings });
   await storage.local.set(StorageKeys.Settings, merged);
   return merged;
+}
+
+// --- 最近使用 -------------------------------------------------------------
+
+/** 取最近一次填充过的登录条目 id。 */
+export async function getLastUsedLogin(storage: VaultStorage): Promise<string | undefined> {
+  return await storage.local.get<string>(StorageKeys.LastUsedLogin);
+}
+
+/** 记录最近一次填充的登录条目 id。 */
+export async function setLastUsedLogin(
+  storage: VaultStorage,
+  cipherId: string,
+): Promise<void> {
+  await storage.local.set(StorageKeys.LastUsedLogin, cipherId);
 }
 
 // --- 数据读写 -------------------------------------------------------------
