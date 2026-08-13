@@ -7,6 +7,20 @@
   let code = $state("");
   let remaining = $state(0);
   let error = $state("");
+  let copied = $state(false);
+
+  async function copy() {
+    if (code === "") {
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(code);
+      copied = true;
+      setTimeout(() => (copied = false), 1200);
+    } catch {
+      // 剪贴板不可用时静默失败，复制按钮只是便捷功能。
+    }
+  }
 
   const parsed = $derived(parseOtpauthUri(totpValue) ?? {
     isSteam: false,
@@ -43,7 +57,20 @@
 </script>
 
 <div class="totp">
-  <span class="code" class:error={error !== ""}>{error !== "" ? "无效的验证器密钥" : code || "…"}</span>
+  <div class="code-row">
+    <span class="code" class:error={error !== ""}>{error !== "" ? "无效的验证器密钥" : code || "…"}</span>
+    {#if code !== ""}
+      <button
+        type="button"
+        class="copy"
+        onclick={copy}
+        title="复制验证码"
+        aria-label="复制验证码"
+      >
+        {copied ? "✓" : "⧉"}
+      </button>
+    {/if}
+  </div>
 
   {#if error === ""}
     <div class="meta">
@@ -63,6 +90,12 @@
     min-width: 0;
   }
 
+  .code-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
   .code {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 15px;
@@ -73,6 +106,22 @@
   .code.error {
     color: var(--danger);
     font-size: 12px;
+  }
+
+  .copy {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 4px;
+  }
+
+  .copy:hover {
+    background: var(--bg-subtle);
+    color: var(--text);
   }
 
   .meta {
