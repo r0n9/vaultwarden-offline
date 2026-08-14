@@ -652,24 +652,25 @@
     background: var(--bg-subtle);
   }
 
-  /* 推荐条目（自动填充建议第一条）：旋转流光边框提示 */
-  @property --vwo-angle {
-    syntax: "<angle>";
-    initial-value: 0deg;
-    inherits: false;
-  }
-
+  /* 推荐条目（自动填充建议第一条）：旋转流光边框提示
+     实现：旋转整个 conic 伪元素（transform 动画），单段 30° 光带，
+     从 12 点方向开始沿顺时针流转；不依赖 CSS 变量插值，兼容性最好 */
   .item-row.recommended {
     border-color: transparent;
-    /* 单段光带：集中在角度起点之后 8%-18% 处，沿角度增大方向（顺时针）旋转 */
+  }
+
+  .item-row.recommended::before {
+    content: "";
+    position: absolute;
+    inset: -50%;
     background: conic-gradient(
-      from var(--vwo-angle),
-      transparent,
-      var(--accent) 8%,
-      var(--accent) 18%,
-      transparent 30%
+      transparent 0deg 330deg,
+      var(--accent) 345deg 360deg,
+      transparent 360deg
     );
     animation: vwo-spin 3s linear infinite;
+    z-index: 0;
+    pointer-events: none;
   }
 
   /* 内部遮罩：盖住中心，只让边框一圈（1px）露出流光 */
@@ -689,8 +690,11 @@
   }
 
   @keyframes vwo-spin {
+    from {
+      transform: rotate(0deg);
+    }
     to {
-      --vwo-angle: 360deg;
+      transform: rotate(360deg);
     }
   }
 
