@@ -4,7 +4,7 @@
     "description": "Extension name"
   },
   "extDesc": {
-    "message": "完全离线的密码库。无账户、无同步、不发起任何网络请求。",
+    "message": "守护你的每一枚密码：本地加密存放，解锁快捷、随时取用。数据只存在你的设备上，不同步、不上传、不联网。",
     "description": "Extension description"
   },
   "commandOpenPopup": {

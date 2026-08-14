@@ -4,7 +4,7 @@
     "description": "Extension name"
   },
   "extDesc": {
-    "message": "A fully offline password vault. No accounts, no sync, no network requests — ever.",
+    "message": "Protect every password. Your vault stays encrypted on your device — quick to unlock, always offline, never synced or uploaded.",
     "description": "Extension description"
   },
   "commandOpenPopup": {
