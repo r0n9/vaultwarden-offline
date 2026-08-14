@@ -118,9 +118,9 @@ src/
 ├── popup/          Svelte 5 extension pages
 ├── platform/       browser API abstraction + message bus + logging
 └── core/           browser-agnostic domain logic
-    ├── crypto/     encryption (Phase 1)
+    ├── crypto/     encryption
     ├── state/      storage keys & state definitions
-    ├── vault/      item models & repository (Phase 2)
+    ├── vault/      item models & repository
     ├── autofill/   autofill (collect / qualify / fill)
     ├── generator/  generators
     ├── totp/       TOTP codes
@@ -161,47 +161,3 @@ that key instead of the UserKey. PIN unlock wraps the same UserKey with a PIN-de
 the encryption strength of the data is unchanged.
 
 ---
-
-## Development Status
-
-- [x] **Phase 0** Scaffolding — three-way build (popup / SW / content script), offline check
-- [x] **Phase 1** Crypto core — EncString, AES-CBC-HMAC, PBKDF2/Argon2id, key hierarchy
-- [x] **Phase 2** Storage & locking — 8 item types, brand types separating plaintext/ciphertext,
-  field-spec encryption table, four lock triggers, exponential unlock throttling,
-  master password policy (≥8 chars with letters and digits)
-- [x] **Phase 3** Import/export — JSON (plain & password-protected) and CSV, round-trip verified
-  against real data losslessly
-- [x] **Phase 4** Item management — list/detail/edit, search & filters, folders, trash,
-  favorites, password history
-- [x] **Phase 5** Autofill engine — collect, qualify, fill, context menu, save notification bar,
-  shortcut, site matching
-- [x] **Phase 6** Generator / TOTP / PIN — see details below
-
-**Phase 6 details**
-
-- Password generator (length / charsets / minimums / avoid ambiguous, unbiased randomness)
-- Passphrase (word count / separator / capitalization / number suffix) and username generators
-- TOTP codes (RFC 6238 official vectors, incl. Steam 5-char codes)
-- PIN unlock (4-12 chars of letters/digits, PIN/master-password switching, shared throttle)
-- "Add folder" in the new-item menu
-- Site favicon auto-fetch with cache (the one offline exception)
-
-**Backlog (deferred)**
-
-- Inline menu overlay (dropdown on field focus) — the largest remaining piece;
-  implement when needed (see Bitwarden's overlay module, ~3600 lines)
-
-**Explicitly out of scope**
-
-- Account registration/login · 2FA/SSO · Sync · Send · Organization sharing · HIBP breach
-  checking · Phishing detection · Telemetry · Billing · Forwarding email aliases
-  (SimpleLogin / AnonAddy, require network)
-
-Full feature scope: [docs/FEATURES.md](docs/FEATURES.md) (Chinese).
-
----
-
-## Security Note
-
-Plaintext export files (`bitwarden_export_*.json`) contain real passwords. They are excluded
-via `.gitignore` — **never commit them**, and delete them securely when done.
