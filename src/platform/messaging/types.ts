@@ -97,9 +97,21 @@ export interface MessageContracts {
     request: { cipherId: string };
     response: AutofillFillResult;
   };
-  "save:detected": {
+  /** content → background：上报表单凭据，判定推迟到导航/兜底定时器。 */
+  "save:report": {
     request: { url: string; username: string; password: string };
-    response: SaveDetectionResult;
+    response: { status: "queued" };
+  };
+  /** background → content：判定完成，推送提示条数据（无响应）。 */
+  "save:decided": {
+    request: {
+      action: "save" | "update";
+      cipherId?: string;
+      url: string;
+      username: string;
+      password: string;
+    };
+    response: undefined;
   };
   "save:commit": {
     request: SaveCommitRequest;

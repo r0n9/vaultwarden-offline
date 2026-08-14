@@ -1,11 +1,14 @@
 /**
  * 保存/更新凭据提示条。
  *
- * 常驻 content script：监听表单提交与密码输入，发现「用户名 + 密码」后向背景页
- * 询问该保存还是更新，然后注入一个顶部横幅让用户决定。
+ * 常驻 content script：监听表单提交与密码输入，发现「用户名 + 密码」后**上报**给
+ * 背景页（save:report，不判定）——判定推迟到「页面导航完成」或「SPA 兜底
+ * 定时器」（对齐 Bitwarden overlay-notifications），结果通过 save:decided
+ * 推送回来，这里据此注入一个顶部横幅让用户决定。
  *
  * 安全要点：
  *   - 提示条**绝不显示密码**，只显示用户名与站点名
+ *   - 密码不落任何页面存储（交给背景页内存暂存），上报后即不再持有
  *   - 用户点「忽略」后，同一站点同一用户名在本会话内不再打扰
  *
  * 样式全部用 `element.style` 内联赋值——注入的 `<style>` 标签受页面 CSP 的
@@ -23,19 +26,6 @@
   /** 一次提交后 5 秒内的重复事件不再触发，避免双提交与快速重试的连击。 */
   const MIN_INTERVAL_MS = 5_000;
   let lastTriggerAt = 0;
-
-  /**
-   * 待保存凭据的跨页面暂存。
-   *
-   * 登录表单提交通常触发页面跳转（/login → 首页），提示条随页面一起销毁。
-   * 因此在提交时先把凭据写入 sessionStorage（tab 级、随会话存活），
-   * 新页面加载时据此恢复提示条（Bitwarden 同款方案）。
-   * 密码会短暂出现在 sessionStorage 中——tab 会话级、可被页面自身读取，
-   * 处理完即清除。
-   */
-  const PENDING_KEY = "vwo:pending-save";
-  /** 提示条显示后若页面未跳转（SPA 场景），此时间后清除暂存避免重复恢复。 */
-  const STASH_CLEAR_DELAY_MS = 10_000;
 
   /** 「忽略」记忆：同站点同用户名在本次会话内不再提示。 */
   const DECLINED_PREFIX = "vwo:declined:";
@@ -111,76 +101,59 @@
     return { username, password: passwordInput.value };
   }
 
-  function stashCredentials(url: string, username: string, password: string): void {
-    sessionStorage.setItem(
-      PENDING_KEY,
-      JSON.stringify({ url, username, password, hostname: hostname(), at: Date.now() }),
-    );
+  /** 上报表单凭据给背景页（不判定；判定由导航/兜底定时器触发）。 */
+  function reportCredentials(url: string, username: string, password: string): void {
+    void chrome.runtime.sendMessage({
+      command: "save:report",
+      payload: { url, username, password },
+    });
   }
 
-  /**
-   * 页面加载时恢复待保存凭据（上一页提交后跳转过来的场景）。
-   * 仅当暂存 hostname 与当前页面一致才恢复——登录页跳首页（同域）会恢复，
-   * 跳第三方（OAuth 等）则不打扰。
-   */
-  async function restorePending(): Promise<void> {
-    if (activeBar != null) {
-      return;
-    }
-    const raw = sessionStorage.getItem(PENDING_KEY);
-    if (raw == null) {
-      return;
-    }
-
-    try {
-      const pending = JSON.parse(raw) as {
+  /** 背景页判定完成推送：显示提示条（密码此刻才回到 content，用完即弃）。 */
+  function handleDecided(
+    message: {
+      command: string;
+      payload?: {
+        action: "save" | "update";
+        cipherId?: string;
         url: string;
         username: string;
         password: string;
-        hostname: string;
       };
-      if (pending.hostname !== hostname()) {
-        return;
-      }
-
-      const response = await chrome.runtime.sendMessage({
-        command: "save:detected",
-        payload: { url: pending.url, username: pending.username, password: pending.password },
-      });
-
-      if (response?.action === "save" || response?.action === "update") {
-        lastTriggerAt = Date.now();
-        showBar({
-          username: pending.username,
-          siteName: hostname(),
-          mode: response.action,
-          cipherId: response.cipherId,
-          onSave: async (mode) => {
-            const result = await chrome.runtime.sendMessage({
-              command: "save:commit",
-              payload: {
-                mode,
-                url: pending.url,
-                username: pending.username,
-                password: pending.password,
-                cipherId: response.cipherId,
-              },
-            });
-            return result?.ok === true;
-          },
-          onDecline: () => {
-            sessionStorage.setItem(`${DECLINED_PREFIX}${hostname()}:${pending.username}`, "1");
-          },
-        });
-      }
-    } catch {
-      // 暂存损坏或解析失败，直接清掉。
-    } finally {
-      sessionStorage.removeItem(PENDING_KEY);
+    },
+    sender: chrome.runtime.MessageSender,
+  ): void {
+    // 只信背景页的推送，防页面脚本伪造消息刷提示条。
+    if (message?.command !== "save:decided" || sender.id !== chrome.runtime.id) {
+      return;
     }
+    const payload = message.payload;
+    if (payload == null || activeBar != null) {
+      return;
+    }
+    const { action, cipherId, url, username, password } = payload;
+
+    lastTriggerAt = Date.now();
+    showBar({
+      username,
+      siteName: hostname(),
+      mode: action,
+      cipherId,
+      onSave: async (mode) => {
+        const result = await chrome.runtime.sendMessage({
+          command: "save:commit",
+          payload: { mode, url, username, password, cipherId },
+        });
+        return result?.ok === true;
+      },
+      onDecline: () => {
+        sessionStorage.setItem(`${DECLINED_PREFIX}${hostname()}:${username}`, "1");
+      },
+    });
   }
 
-  async function maybePrompt(form?: HTMLFormElement): Promise<void> {
+  /** 发现「用户名 + 密码」：先查守卫，再上报背景页。 */
+  function maybePrompt(form?: HTMLFormElement): void {
     if (activeBar != null || Date.now() - lastTriggerAt < MIN_INTERVAL_MS) {
       return;
     }
@@ -198,36 +171,7 @@
       return;
     }
 
-    // 先暂存再显示：即使提示条随页面跳转销毁，新页面也能恢复。
-    stashCredentials(url, username, password);
-
-    // 密码只发给背景页，不落任何页面存储。
-    const response = await chrome.runtime.sendMessage({
-      command: "save:detected",
-      payload: { url, username, password },
-    });
-
-    if (response == null || response.action === "none") {
-      return;
-    }
-
-    lastTriggerAt = Date.now();
-    showBar({
-      username,
-      siteName: hostname(),
-      mode: response.action,
-      cipherId: response.cipherId,
-      onSave: async (mode) => {
-        const result = await chrome.runtime.sendMessage({
-          command: "save:commit",
-          payload: { mode, url, username, password, cipherId: response.cipherId },
-        });
-        return result?.ok === true;
-      },
-      onDecline: () => {
-        sessionStorage.setItem(declineKey, "1");
-      },
-    });
+    reportCredentials(url, username, password);
   }
 
   // --- 事件监听 -------------------------------------------------------------
@@ -236,13 +180,10 @@
     "submit",
     (event) => {
       const form = event.target instanceof HTMLFormElement ? event.target : undefined;
-      void maybePrompt(form);
+      maybePrompt(form);
     },
     true,
   );
-
-  // 上一页提交后跳转过来：恢复待保存凭据的提示条。
-  void restorePending();
 
   // SPA 登录不触发 submit 时，密码输入完成（失焦）也能兜底触发。
   document.addEventListener(
@@ -260,10 +201,13 @@
         return;
       }
 
-      void maybePrompt();
+      maybePrompt();
     },
     true,
   );
+
+  // 背景页判定完成后推送提示条（导航后的新页面也能收到）。
+  chrome.runtime.onMessage.addListener(handleDecided);
 
   // --- 提示条 UI ------------------------------------------------------------
 
@@ -348,10 +292,6 @@
     bar.appendChild(actions);
 
     const dismiss = () => bar.remove();
-
-    // 页面未跳转（SPA）时，10 秒后清除暂存避免下次刷新重复恢复；
-    // 若页面已跳转，本定时器随页面销毁，暂存留给新页面恢复。
-    setTimeout(() => sessionStorage.removeItem(PENDING_KEY), STASH_CLEAR_DELAY_MS);
 
     saveButton.addEventListener("click", async () => {
       saveButton.disabled = true;

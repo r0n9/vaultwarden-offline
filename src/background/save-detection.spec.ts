@@ -26,39 +26,64 @@ function login(username: string, uris: string[], password = "pw"): CipherView {
 }
 
 describe("determineSaveAction", () => {
-  it("同站点同用户名 → 更新", () => {
-    const ciphers = [login("octocat", ["https://github.com"])];
+  it("同站点同用户名且密码已变 → 更新", () => {
+    const ciphers = [login("octocat", ["https://github.com"], "old-pass1")];
 
-    const decision = determineSaveAction(ciphers, "https://github.com/settings", "octocat");
+    const decision = determineSaveAction(
+      ciphers,
+      "https://github.com/settings",
+      "octocat",
+      "new-pass1",
+    );
 
     expect(decision.action).toBe("update");
     expect(decision.cipherId).toBe(ciphers[0]?.id);
   });
 
+  it("同站点同用户名且密码相同 → 不提示（没有可保存的变化）", () => {
+    const ciphers = [login("octocat", ["https://github.com"], "same-pass1")];
+
+    expect(determineSaveAction(ciphers, "https://github.com", "octocat", "same-pass1").action).toBe(
+      "none",
+    );
+  });
+
+  it("用户名大小写不同视为同一账号（对齐 Bitwarden）", () => {
+    const ciphers = [login("Octocat", ["https://github.com"], "old-pass1")];
+
+    const decision = determineSaveAction(ciphers, "https://github.com", "octocat", "new-pass1");
+
+    expect(decision.action).toBe("update");
+  });
+
   it("同站点但用户名不同 → 保存新条目（多账号场景）", () => {
     const ciphers = [login("octocat", ["https://github.com"])];
 
-    expect(determineSaveAction(ciphers, "https://github.com", "someone-else").action).toBe("save");
+    expect(
+      determineSaveAction(ciphers, "https://github.com", "someone-else", "pw").action,
+    ).toBe("save");
   });
 
   it("不同站点即使用户名相同 → 保存新条目", () => {
     const ciphers = [login("octocat", ["https://github.com"])];
 
-    expect(determineSaveAction(ciphers, "https://gitlab.com", "octocat").action).toBe("save");
+    expect(determineSaveAction(ciphers, "https://gitlab.com", "octocat", "pw").action).toBe("save");
   });
 
-  it("站点匹配但用户名相同、条目在回收站 → 保存新条目", () => {
+  it("站点匹配但条目在回收站 → 保存新条目", () => {
     const inTrash = login("octocat", ["https://github.com"]);
     inTrash.deletedDate = "2026-01-01T00:00:00.000Z";
 
-    expect(determineSaveAction([inTrash], "https://github.com", "octocat").action).toBe("save");
+    expect(determineSaveAction([inTrash], "https://github.com", "octocat", "pw").action).toBe(
+      "save",
+    );
   });
 
   it("同域不同子域按匹配策略判定", () => {
-    const ciphers = [login("octocat", ["https://github.com"])];
+    const ciphers = [login("octocat", ["https://github.com"], "old-pass1")];
 
     // 默认 Domain 策略下，子域也算同一站点。
-    expect(determineSaveAction(ciphers, "https://gist.github.com", "octocat").action).toBe(
+    expect(determineSaveAction(ciphers, "https://gist.github.com", "octocat", "new-pass1").action).toBe(
       "update",
     );
   });
@@ -69,21 +94,34 @@ describe("handleSaveDetected", () => {
     await saveCipher(storage, login("octocat", ["https://github.com"]));
     await lock(storage);
 
-    const result = await handleSaveDetected(storage, "https://github.com", "octocat");
+    const result = await handleSaveDetected(storage, "https://github.com", "octocat", "pw");
 
     expect(result.action).toBe("none");
   });
 
-  it("已有同站点同用户名条目 → 更新", async () => {
-    const existing = await saveCipher(storage, login("octocat", ["https://github.com"]));
+  it("已有同站点同用户名条目且密码已变 → 更新", async () => {
+    const existing = await saveCipher(storage, login("octocat", ["https://github.com"], "old-pass1"));
 
-    const result = await handleSaveDetected(storage, "https://github.com/x", "octocat");
+    const result = await handleSaveDetected(storage, "https://github.com/x", "octocat", "new-pass1");
 
     expect(result).toEqual({ action: "update", cipherId: existing.id });
   });
 
+  it("同用户名且密码未变 → 不提示", async () => {
+    await saveCipher(storage, login("octocat", ["https://github.com"], "same-pass1"));
+
+    const result = await handleSaveDetected(storage, "https://github.com", "octocat", "same-pass1");
+
+    expect(result.action).toBe("none");
+  });
+
   it("新站点 → 保存", async () => {
-    const result = await handleSaveDetected(storage, "https://example.com/login", "newuser");
+    const result = await handleSaveDetected(
+      storage,
+      "https://example.com/login",
+      "newuser",
+      "pw",
+    );
 
     expect(result.action).toBe("save");
   });

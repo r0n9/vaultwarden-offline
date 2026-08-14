@@ -53,7 +53,7 @@ import {
   removeAttachment,
 } from "./attachment-handler";
 import { getCipher } from "@/core/vault/vault-repository";
-import { commitSave, handleSaveDetected } from "./save-detection";
+import { commitSave, registerSaveTriggers, reportSaveAttempt } from "./save-detection";
 import { fetchFavicon } from "./favicon";
 import { registerBadgeTriggers, updateMatchBadge } from "./badge";
 import { pickShortcutTarget } from "./shortcut";
@@ -241,8 +241,12 @@ registerHandlers({
   "autofill:fillActiveTab": async ({ cipherId }) =>
     await fillActiveTab(vaultStorage, cipherId),
 
-  "save:detected": async ({ url, username }) =>
-    await handleSaveDetected(vaultStorage, url, username),
+  "save:report": async ({ url, username, password }, sender) => {
+    if (sender.tab?.id != null) {
+      reportSaveAttempt(vaultStorage, sender.tab.id, { url, username, password });
+    }
+    return { status: "queued" };
+  },
 
   "save:commit": async (request) => await commitSave(vaultStorage, request),
 
@@ -454,6 +458,7 @@ void currentStatusAndRefresh();
 registerContextMenu(vaultStorage);
 registerMenuRefreshTriggers(vaultStorage);
 registerBadgeTriggers(vaultStorage);
+registerSaveTriggers(vaultStorage);
 void refreshContextMenu(vaultStorage);
 void updateMatchBadge(vaultStorage);
 
