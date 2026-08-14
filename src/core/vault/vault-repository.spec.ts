@@ -336,7 +336,7 @@ describe("筛选与排序", () => {
     expect(sorted.map((c) => c.name)).toEqual(["带同端口", "无端口", "不同端口"]);
   });
 
-  it("站点匹配排序：站点无端口时带端口条目不优于无端口条目", () => {
+  it("站点匹配排序：站点无端口时无端口条目更精确", () => {
     const url = "https://example.com/";
     const plain = {
       ...items[0]!,
@@ -349,12 +349,10 @@ describe("筛选与排序", () => {
       login: { uris: [{ uri: "https://example.com:3000/" }] },
     };
 
-    // 主机相同（无端口 vs 带端口）视为同级，按名称排。
+    // 站点无端口：host 完全一致的无端口条目得 5 分，
+    // 带端口条目主机相同但端口不匹配得 4 分——无端口排前。
     const sorted = sortCiphersForUrl([withPort, plain], url);
-    expect(sorted.map((c) => c.name)).toEqual(["带 3000", "无端口"]);
-
-    const sortedReverse = sortCiphersForUrl([plain, withPort], url);
-    expect(sortedReverse.map((c) => c.name)).toEqual(["无端口", "带 3000"]);
+    expect(sorted.map((c) => c.name)).toEqual(["无端口", "带 3000"]);
   });
 
   it("站点匹配排序：同精度内按收藏与名称", () => {
