@@ -671,12 +671,12 @@
     animation: vwo-spin 3s linear infinite;
   }
 
-  /* 内部遮罩：盖住中心，只让边框一圈露出流光 */
+  /* 内部遮罩：盖住中心，只让边框一圈（1px）露出流光 */
   .item-row.recommended::after {
     content: "";
     position: absolute;
-    inset: 2px;
-    border-radius: 6px;
+    inset: 1px;
+    border-radius: 7px;
     background: var(--surface);
     z-index: 0;
     pointer-events: none;
