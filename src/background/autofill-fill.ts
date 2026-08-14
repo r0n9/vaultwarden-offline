@@ -4,6 +4,8 @@ import {
   buildLoginFillScript,
   type FillScript,
 } from "@/core/autofill/fill-script";
+import { parseOtpauthUri } from "@/core/totp/otpauth";
+import { generateSteamCode, generateTotp } from "@/core/totp/totp";
 import type { AutofillPageDetails } from "@/core/autofill/models";
 import type { VaultStorage } from "@/core/state/storage.port";
 import { CipherType } from "@/core/vault/enums";
@@ -73,7 +75,7 @@ export async function fillTab(
       continue;
     }
 
-    const script = buildScriptForCipher(cipher, frame.details as AutofillPageDetails);
+    const script = await buildScriptForCipher(cipher, frame.details as AutofillPageDetails);
     if (script.actions.length === 0) {
       continue;
     }
@@ -132,7 +134,10 @@ function isFillableType(type: number): boolean {
 }
 
 /** 按条目类型分派到对应的脚本生成器。 */
-function buildScriptForCipher(cipher: CipherView, details: AutofillPageDetails): FillScript {
+async function buildScriptForCipher(
+  cipher: CipherView,
+  details: AutofillPageDetails,
+): Promise<FillScript> {
   switch (cipher.type) {
     case CipherType.Card:
       return buildCardFillScript(details, cipher.card ?? {});
@@ -144,6 +149,35 @@ function buildScriptForCipher(cipher: CipherView, details: AutofillPageDetails):
       return buildLoginFillScript(details, {
         username: cipher.login?.username,
         password: cipher.login?.password,
+        // 登录填充时顺带计算当前动态验证码，填入页面的验证码字段。
+        totp: await computeTotp(cipher.login?.totp),
       });
+  }
+}
+
+/**
+ * 计算当前时刻的 TOTP 动态码。
+ *
+ * 支持 otpauth:// URI（含 Steam 变体）与裸 base32 secret。
+ * 计算失败（无效 secret 等）返回 undefined——只跳过验证码字段，
+ * 不影响用户名密码的填充。
+ */
+async function computeTotp(totpValue: string | undefined): Promise<string | undefined> {
+  if (totpValue == null || totpValue === "") {
+    return undefined;
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  try {
+    const parsed = parseOtpauthUri(totpValue);
+    if (parsed != null) {
+      return parsed.isSteam
+        ? await generateSteamCode(parsed.config.secret, now)
+        : await generateTotp(parsed.config, now);
+    }
+    // 裸 secret：按标准 TOTP（SHA1 / 6 位 / 30 秒）处理。
+    return await generateTotp({ secret: totpValue, algorithm: "SHA1", digits: 6, period: 30 }, now);
+  } catch {
+    return undefined;
   }
 }
