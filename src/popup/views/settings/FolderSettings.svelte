@@ -47,65 +47,46 @@
   }
 </script>
 
-<button class="back" onclick={onBack}>‹ 返回</button>
-<h1>文件夹</h1>
+<div class="subpage">
+  <div class="subpage-head">
+    <button class="back" onclick={onBack} aria-label="返回">‹</button>
+    <h1>文件夹</h1>
+  </div>
 
-{#if notice !== ""}
-  <p class="notice">{notice}</p>
-{/if}
+  {#if notice !== ""}
+    <p class="notice">{notice}</p>
+  {/if}
 
-{#if folders.length === 0}
-  <p class="hint">还没有文件夹。</p>
-{:else}
-  <ul class="folders">
-    {#each folders as folder (folder.id)}
-      <li>
-        <span>{folder.name}</span>
-        <button onclick={() => removeFolder(folder)} disabled={busy} aria-label="删除文件夹">×</button>
-      </li>
-    {/each}
-  </ul>
-  <p class="hint">删除文件夹不会删除其中的条目，它们会回到「无文件夹」。</p>
-{/if}
+  <section class="panel">
+    {#if folders.length === 0}
+      <p class="hint">还没有文件夹。</p>
+    {:else}
+      <ul class="folders">
+        {#each folders as folder (folder.id)}
+          <li>
+            <span>{folder.name}</span>
+            <button onclick={() => removeFolder(folder)} disabled={busy} aria-label="删除文件夹">×</button>
+          </li>
+        {/each}
+      </ul>
+      <p class="hint">删除文件夹不会删除其中的条目，它们会回到「无文件夹」。</p>
+    {/if}
 
-<div class="add-folder">
-  <input type="text" placeholder="新文件夹名称" bind:value={newFolderName} />
-  <button class="btn btn-secondary" onclick={addFolder} disabled={busy}>添加</button>
+    <div class="add-folder">
+      <input type="text" placeholder="新文件夹名称" bind:value={newFolderName} />
+      <button class="btn btn-secondary" onclick={addFolder} disabled={busy}>添加</button>
+    </div>
+  </section>
 </div>
 
 <style>
-  .back {
-    align-self: flex-start;
-    border: none;
-    background: transparent;
-    color: var(--text-muted);
-    font-size: 12px;
-    font-family: inherit;
-    cursor: pointer;
-    padding: 0;
-  }
-
-  h1 {
-    margin: 0;
-    font-size: 15px;
-    font-weight: 600;
-  }
-
-  .notice {
-    padding: 8px 10px;
-    border-radius: 6px;
-    background: var(--bg-subtle);
-    font-size: 12px;
-    margin: 0;
-  }
-
   .folders {
     list-style: none;
     margin: 0;
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
   }
 
   .folders li {
@@ -113,7 +94,12 @@
     align-items: center;
     justify-content: space-between;
     font-size: 13px;
-    padding: 4px 2px;
+    padding: 7px 8px;
+    border-radius: 6px;
+  }
+
+  .folders li:hover {
+    background: var(--bg-subtle);
   }
 
   .folders button {

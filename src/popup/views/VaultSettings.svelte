@@ -391,14 +391,6 @@
     gap: 12px;
   }
 
-  .notice {
-    padding: 8px 10px;
-    border-radius: 6px;
-    background: var(--bg-subtle);
-    font-size: 12px;
-    margin: 0;
-  }
-
   h2 {
     margin: 0 0 8px;
     font-size: 12px;
@@ -406,16 +398,6 @@
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.04em;
-  }
-
-  .panel {
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--surface);
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
   }
 
   /* 二级菜单分组 */
@@ -515,23 +497,5 @@
   dd {
     margin: 0;
     text-align: right;
-  }
-
-  .row {
-    display: flex;
-    gap: 8px;
-  }
-
-  .invalid {
-    color: var(--danger);
-  }
-
-  .panel.danger {
-    border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
-    background: color-mix(in srgb, var(--danger) 5%, var(--surface));
-  }
-
-  .panel.danger h2 {
-    color: var(--danger);
   }
 </style>

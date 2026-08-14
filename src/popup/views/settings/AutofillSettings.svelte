@@ -27,43 +27,34 @@
   }
 </script>
 
-<button class="back" onclick={onBack}>‹ 返回</button>
-<h1>自动填充</h1>
+<div class="subpage">
+  <div class="subpage-head">
+    <button class="back" onclick={onBack} aria-label="返回">‹</button>
+    <h1>自动填充</h1>
+  </div>
 
-<button class="btn btn-secondary" onclick={onCollect}>检测当前页面字段</button>
-<p class="hint">在打开的站点页面上识别登录表单与字段结构。</p>
+  <section class="panel">
+    <button class="btn btn-secondary" onclick={onCollect}>检测当前页面字段</button>
+    <p class="hint">在打开的站点页面上识别登录表单与字段结构。</p>
+  </section>
 
-<button class="shortcut-row" onclick={openShortcutsPage}>
-  <span>
-    <span class="shortcut-label">自动填充快捷键</span>
-    <span class="shortcut-value">
-      {autofillShortcut !== "" ? autofillShortcut : "未设置，点击配置"}
-    </span>
-  </span>
-  <span class="shortcut-open">↗</span>
-</button>
-<p class="hint">
-  若快捷键被其他扩展占用，Chrome 可能不会分配——点击上方前往快捷键管理页手动设置。
-</p>
+  <section class="panel">
+    <button class="shortcut-row" onclick={openShortcutsPage}>
+      <span>
+        <span class="shortcut-label">自动填充快捷键</span>
+        <span class="shortcut-value">
+          {autofillShortcut !== "" ? autofillShortcut : "未设置，点击配置"}
+        </span>
+      </span>
+      <span class="shortcut-open">↗</span>
+    </button>
+    <p class="hint">
+      若快捷键被其他扩展占用，Chrome 可能不会分配——点击上方前往快捷键管理页手动设置。
+    </p>
+  </section>
+</div>
 
 <style>
-  .back {
-    align-self: flex-start;
-    border: none;
-    background: transparent;
-    color: var(--text-muted);
-    font-size: 12px;
-    font-family: inherit;
-    cursor: pointer;
-    padding: 0;
-  }
-
-  h1 {
-    margin: 0;
-    font-size: 15px;
-    font-weight: 600;
-  }
-
   .shortcut-row {
     display: flex;
     align-items: center;

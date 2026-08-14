@@ -50,10 +50,11 @@
   });
 </script>
 
-<div class="debug">
-  <button class="back" onclick={onBack}>‹ 返回</button>
-
-  <h1>页面字段采集</h1>
+<div class="subpage">
+  <div class="subpage-head">
+    <button class="back" onclick={onBack} aria-label="返回">‹</button>
+    <h1>页面字段采集</h1>
+  </div>
   <p class="hint">识别当前页面的表单与字段结构，用于调试自动填充匹配。</p>
 
   {#if busy}
@@ -111,29 +112,6 @@
 </div>
 
 <style>
-  .debug {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .back {
-    align-self: flex-start;
-    border: none;
-    background: transparent;
-    color: var(--text-muted);
-    font-size: 12px;
-    font-family: inherit;
-    cursor: pointer;
-    padding: 0;
-  }
-
-  h1 {
-    margin: 0;
-    font-size: 15px;
-    font-weight: 600;
-  }
-
   h2 {
     margin: 0 0 4px;
     font-size: 11px;
@@ -153,8 +131,8 @@
 
   .frame {
     border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 8px 10px;
+    border-radius: 8px;
+    padding: 12px;
   }
 
   ul {
