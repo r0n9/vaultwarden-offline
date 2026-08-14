@@ -172,6 +172,8 @@
     }
 
     reportCredentials(url, username, password);
+    // 上报即防抖：5 秒内不再重复上报（change 与 click 兜底可能先后触发）。
+    lastTriggerAt = Date.now();
   }
 
   // --- 事件监听 -------------------------------------------------------------
@@ -201,6 +203,31 @@
         return;
       }
 
+      maybePrompt();
+    },
+    true,
+  );
+
+  // SPA 兜底：无 submit 事件、change 未派发（原生自动填充不派发 change、
+  // 页面 preventDefault mousedown 不失焦）时，点击提交类控件也能触发——
+  // 但只响应提交控件与提示条之外的点击，避免任意点击误报。
+  document.addEventListener(
+    "click",
+    (event) => {
+      const target = event.target as HTMLElement | null;
+      if (target == null) {
+        return;
+      }
+      if (target.closest?.("[data-vwo-save-bar]") != null) {
+        return;
+      }
+      if (
+        target.closest?.(
+          'button, input[type="submit"], input[type="button"], [role="button"]',
+        ) == null
+      ) {
+        return;
+      }
       maybePrompt();
     },
     true,
