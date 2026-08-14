@@ -51,6 +51,7 @@
 2. 下载对应浏览器的 zip（Chrome/Edge/Opera 用 `-chrome.zip`，Firefox 用 `-firefox.zip`）
 3. 解压到本地目录
 4. **Chrome / Edge**：打开 `chrome://extensions` → 开启「开发者模式」→ 「加载已解压的扩展程序」→ 选择解压目录
+   
    **Firefox**：打开 `about:debugging#/runtime/this-firefox` → 「临时载入附加组件」→ 选择解压目录下的 `manifest.json`
 
 > Firefox 的临时加载在重启浏览器后失效，需重新加载；Chrome 的已解压模式持续有效。
