@@ -105,7 +105,8 @@ treated as a violation:
   falling back to a local initial-letter block
 
 The CSP and build-time checker allow exactly those icon-service domains: `www.google.com` (s2),
-`t1.gstatic.com` (Google's favicon redirect target), and `icons.duckduckgo.com`.
+`*.gstatic.com` (Google's favicon redirect targets — the redirect can land on any `tN` subdomain),
+and `icons.duckduckgo.com`.
 
 ---
 

@@ -96,8 +96,8 @@ content script 运行在宿主页面的 CSP 下、不受第 1 条约束，第 2 
   未缓存回退到本地首字母色块
 
 CSP 与构建期校验对图标服务做了对应放行：`connect-src` 仅多
-`www.google.com`（s2 接口）、`t1.gstatic.com`（Google favicon 重定向后的静态资源域）
-与 `icons.duckduckgo.com`（DuckDuckGo 回退源）。
+`www.google.com`（s2 接口）、`*.gstatic.com`（Google favicon 重定向后的静态资源域，
+重定向会落在任意 tN 子域，故通配）、`icons.duckduckgo.com`（DuckDuckGo 回退源）。
 
 ---
 
