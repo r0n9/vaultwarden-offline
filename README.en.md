@@ -24,7 +24,50 @@ your data is never locked into this extension.
   password history, item-level re-prompt
 - **Real site favicons** — silently fetched and cached, falling back to a local initial-letter block
 
-## Building
+## Who It's For
+
+The **fully offline** edition fits these situations:
+
+- **Privacy-sensitive users** — no password data (even encrypted) leaves your device;
+  no dependency on any cloud service
+- **Disconnected / weak-network environments** — intranets, travel, restricted networks;
+  everything runs locally, no server needed
+- **Migrating from Bitwarden / Vaultwarden** — import your export file directly;
+  cipher formats are interoperable and you can export back anytime
+- **Regulated / high-security environments** — places where data must not leave the
+  network, or where an open-source tool is required to replace commercial closed source
+- **Minimalists** — no accounts, no sync, no telemetry; open the extension and use it
+
+Not a fit for: **automatic sync across devices**, **team sharing**, or **online password
+recovery** (a forgotten master password is unrecoverable — that is the price of offline).
+
+## Why Open Source & Offline (Security & Privacy)
+
+- **Auditable code** — the whole project is open (GPL-3.0); encryption, storage, and
+  network behavior are all inspectable — no "trust us, it's secure" needed
+- **Verifiable format** — ciphertext is identical to Bitwarden's official format
+  (AES-256-CBC + HMAC-SHA256), interoperable and cross-checkable, no black box
+- **Zero telemetry** — no analytics, no crash reporting; the only network call is
+  site favicon fetching (see [Offline Guarantee](#offline-guarantee)), auditable
+- **Keys never leave your device** — master password, PIN, and UserKey are derived and
+  used locally; no server ever sees the keys
+- **Portable** — export back to Vaultwarden / Bitwarden anytime; you're never locked in
+
+## Quick Start (No Build Required)
+
+1. Open the [Releases page](https://github.com/r0n9/vaultwarden-offline/releases)
+2. Download the zip for your browser (`-chrome.zip` for Chrome/Edge/Opera,
+   `-firefox.zip` for Firefox)
+3. Extract it to a local directory
+4. **Chrome / Edge**: open `chrome://extensions` → enable "Developer mode" →
+   "Load unpacked" → select the extracted directory
+   **Firefox**: open `about:debugging#/runtime/this-firefox` → "Load Temporary Add-on" →
+   select `manifest.json` in the extracted directory
+
+> Firefox temporary loading resets when the browser restarts; Chrome's unpacked
+> mode persists. Prefer building manually? See the next section.
+
+## Building (Developers)
 
 ```bash
 npm install
