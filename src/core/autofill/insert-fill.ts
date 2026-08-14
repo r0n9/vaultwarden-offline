@@ -152,10 +152,20 @@ function setNativeValue(element: HTMLInputElement | HTMLTextAreaElement, value: 
  * 前置事件可能被站点的脚本改动当前值，因此赋值前后都要把值还原回来，
  * 否则会出现"填了又被自己的模拟事件清掉"的怪象。
  */
+/** 填充标记：保存检测据此区分「扩展填充」与「用户手动输入」，避免误报。 */
+export const AUTOFILLED_MARKER = "data-vwo-autofilled";
+/** 标记保留时长——超时自动清除，防止用户稍后手动改密码时被误跳过。 */
+const MARKER_TTL_MS = 3_000;
+
 function withSimulatedEvents(element: FieldElement, assign: () => void): void {
   const hasValue = "value" in element;
   const input = element as HTMLInputElement;
   const beforeValue = hasValue ? input.value : "";
+
+  // 标记本次赋值由扩展填充引起；save-detector 的 change 监听消费该标记后跳过，
+  // 否则填充派发的 change 会被误判成「用户改密码」而弹出更新提示。
+  element.setAttribute(AUTOFILLED_MARKER, "1");
+  setTimeout(() => element.removeAttribute(AUTOFILLED_MARKER), MARKER_TTL_MS);
 
   clickElement(element);
   focusElement(element);

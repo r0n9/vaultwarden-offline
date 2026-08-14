@@ -249,9 +249,18 @@
     "change",
     (event) => {
       const target = event.target as HTMLInputElement | null;
-      if (target != null && target.type === "password" && target.value !== "") {
-        void maybePrompt();
+      if (target == null || target.type !== "password" || target.value === "") {
+        return;
       }
+
+      // 扩展自动填充派发的事件：消费标记后跳过，
+      // 否则填充完还没登录就会误报「更新密码」。
+      if (target.hasAttribute("data-vwo-autofilled")) {
+        target.removeAttribute("data-vwo-autofilled");
+        return;
+      }
+
+      void maybePrompt();
     },
     true,
   );

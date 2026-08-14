@@ -105,6 +105,20 @@ describe("事件派发", () => {
     expect(events).toContain("change");
   });
 
+  it("填充时打上扩展标记，供保存检测区分用户输入", async () => {
+    // 回归：填充派发的 change 事件曾触发保存检测误报「更新密码」。
+    render(`<form><input type="password" name="pass"></form>`);
+
+    await fill({ password: "s3cret" });
+
+    const element = input("pass");
+    expect(element.hasAttribute("data-vwo-autofilled")).toBe(true);
+
+    // 消费标记（save-detector 的行为）后移除。
+    element.removeAttribute("data-vwo-autofilled");
+    expect(element.hasAttribute("data-vwo-autofilled")).toBe(false);
+  });
+
   it("事件冒泡到表单，便于站点在表单层监听", async () => {
     render(`<form id="f"><input type="password" name="pass"></form>`);
 
