@@ -89,7 +89,7 @@ body {
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
     "Microsoft YaHei", sans-serif;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
@@ -123,7 +123,7 @@ body.standalone #app {
 }
 
 .field > label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-muted);
 }
@@ -138,7 +138,7 @@ select {
   /* 输入框在浅灰内容区上保持白色 */
   background: var(--surface);
   color: var(--text);
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
 }
 
@@ -155,7 +155,7 @@ select:focus {
   border-radius: 6px;
   background: var(--accent);
   color: var(--accent-text);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;

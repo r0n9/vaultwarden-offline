@@ -215,7 +215,8 @@
   }
 
   .title {
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 15px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -283,7 +284,7 @@
     border: none;
     background: transparent;
     color: var(--text-muted);
-    font-size: 10px;
+    font-size: 11px;
     font-family: inherit;
     cursor: pointer;
     border-top: 2px solid transparent;

@@ -402,8 +402,8 @@
 
   h1 {
     margin: 0;
-    font-size: 15px;
-    font-weight: 600;
+    font-size: 16px;
+    font-weight: 700;
     word-break: break-all;
   }
 

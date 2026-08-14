@@ -618,8 +618,8 @@
 
   .section {
     margin: 4px 0 2px;
-    font-size: 11px;
-    font-weight: 600;
+    font-size: 12px;
+    font-weight: 700;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -723,12 +723,12 @@
   }
 
   .more-menu button {
-    padding: 6px 10px;
+    padding: 7px 10px;
     border: none;
     border-radius: 6px;
     background: transparent;
     color: var(--text);
-    font-size: 12px;
+    font-size: 13px;
     font-family: inherit;
     text-align: left;
     cursor: pointer;
@@ -750,7 +750,8 @@
   }
 
   .name {
-    font-size: 13px;
+    font-size: 14px;
+    font-weight: 600;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -762,7 +763,7 @@
   }
 
   .subtitle {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-muted);
     white-space: nowrap;
     overflow: hidden;
