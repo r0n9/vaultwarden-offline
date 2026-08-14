@@ -104,8 +104,8 @@ async function createRootMenu(): Promise<void> {
   });
 }
 
-/** 筛选匹配当前站点的登录条目，收藏优先、按名称排序，最多取 8 条。 */
-export async function findMatchingLoginCiphers(
+/** 匹配当前站点的全部登录条目，收藏优先、按名称排序（不截断）。 */
+export async function findAllMatchingLoginCiphers(
   storage: VaultStorage,
   url: string | undefined,
 ): Promise<CipherView[]> {
@@ -131,7 +131,29 @@ export async function findMatchingLoginCiphers(
   // 排序复用 vault-search 的 sortCiphersForUrl（域名层级精度优先，同级再收藏、名称）。
   // 两处各自实现同样的排序迟早会漂移——快捷键回退和右键菜单
   // 都靠「列表第一条」取目标条目，排序一旦不一致就会填错。
-  return sortCiphersForUrl(matches, url).slice(0, MAX_MENU_ITEMS);
+  return sortCiphersForUrl(matches, url);
+}
+
+/** 右键菜单用：排序后最多取 8 条——菜单太长就没法用了。 */
+export async function findMatchingLoginCiphers(
+  storage: VaultStorage,
+  url: string | undefined,
+): Promise<CipherView[]> {
+  return (await findAllMatchingLoginCiphers(storage, url)).slice(0, MAX_MENU_ITEMS);
+}
+
+/**
+ * 角标用：匹配数量。
+ *
+ * 之前直接复用 findMatchingLoginCiphers 拿 length，被菜单的 8 条截断坑到——
+ * 匹配几十条时角标永远显示 8，>9 显示 "9+" 的逻辑形同虚设。
+ * 数量不需要排序，但几十条的 sort 只是微秒级，复用全部匹配避免逻辑重复。
+ */
+export async function countMatchingLoginCiphers(
+  storage: VaultStorage,
+  url: string | undefined,
+): Promise<number> {
+  return (await findAllMatchingLoginCiphers(storage, url)).length;
 }
 
 export function registerContextMenu(storage: VaultStorage): void {

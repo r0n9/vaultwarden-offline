@@ -3,7 +3,7 @@ import { VaultStatus } from "@/core/state/vault-status";
 import { getStatus } from "@/core/vault/vault.service";
 import { api } from "@/platform/browser-api";
 
-import { findMatchingLoginCiphers } from "./context-menu";
+import { countMatchingLoginCiphers } from "./context-menu";
 import { fetchFavicon } from "./favicon";
 
 /**
@@ -32,8 +32,7 @@ export async function updateMatchBadge(storage: VaultStorage): Promise<void> {
       return;
     }
 
-    const matches = await findMatchingLoginCiphers(storage, tab.url);
-    const count = matches.length;
+    const count = await countMatchingLoginCiphers(storage, tab.url);
 
     // 站点有匹配条目时顺带静默获取并更新 favicon 缓存（不阻塞角标）。
     if (count > 0) {
