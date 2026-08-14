@@ -190,7 +190,7 @@ PIN 解锁是同一 UserKey 的另一份包裹（PIN 派生密钥包裹），数
 
 | 微信赞赏 | 支付宝 |
 |---|---|
-| ![微信赞赏码](public/sponsor/wechat.png) | ![支付宝收款码](public/sponsor/alipay.png) |
+| <img src="public/sponsor/wechat.png" width="220" alt="微信赞赏码"> | <img src="public/sponsor/alipay.png" width="220" alt="支付宝收款码"> |
 
 - 打赏是纯粹的感谢，**不会带来任何功能特权**——本项目永久免费、无广告、无会员。
 
