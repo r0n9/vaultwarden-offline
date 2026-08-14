@@ -178,11 +178,11 @@
   const trashItems = $derived(filterCiphers(ciphers, { trash: true }));
 </script>
 
-{#snippet itemList(ciphersToShow: CipherView[])}
+{#snippet itemList(ciphersToShow: CipherView[], recommendFirst = false)}
   <ul class="items">
-    {#each ciphersToShow as cipher (cipher.id)}
+    {#each ciphersToShow as cipher, index (cipher.id)}
       {@const url = cipherUrl(cipher)}
-      <li class="item-row">
+      <li class="item-row" class:recommended={recommendFirst && index === 0}>
         <button class="item-main" onclick={() => onOpen(cipher.id)}>
           <CipherIcon {cipher} />
           <span class="text">
@@ -397,7 +397,7 @@
     {:else}
       {#if filteredSiteMatches.length > 0}
         <h3 class="section">自动填充建议（{filteredSiteMatches.length}）</h3>
-        {@render itemList(filteredSiteMatches)}
+        {@render itemList(filteredSiteMatches, true)}
       {/if}
 
       <h3 class="section">全部项目（{allItems.length}）</h3>
@@ -636,6 +636,7 @@
 
   /* Bitwarden 风格条目行：卡片式（surface 底 + 圆角 + 细边框），行间留白 */
   .item-row {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -649,6 +650,59 @@
   .item-row:hover {
     border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
     background: var(--bg-subtle);
+  }
+
+  /* 推荐条目（自动填充建议第一条）：旋转流光边框提示 */
+  @property --vwo-angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+  }
+
+  .item-row.recommended {
+    border-color: transparent;
+    background: conic-gradient(
+      from var(--vwo-angle),
+      var(--accent),
+      transparent 30%,
+      transparent 70%,
+      var(--accent)
+    );
+    animation: vwo-spin 3s linear infinite;
+  }
+
+  /* 内部遮罩：盖住中心，只让边框一圈露出流光 */
+  .item-row.recommended::after {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    border-radius: 6px;
+    background: var(--surface);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .item-row.recommended > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  @keyframes vwo-spin {
+    to {
+      --vwo-angle: 360deg;
+    }
+  }
+
+  /* 尊重系统「减弱动态效果」设置 */
+  @media (prefers-reduced-motion: reduce) {
+    .item-row.recommended {
+      animation: none;
+      border-color: var(--accent);
+      background: var(--surface);
+    }
+    .item-row.recommended::after {
+      display: none;
+    }
   }
 
   .item-main {
