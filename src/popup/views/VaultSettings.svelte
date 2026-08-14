@@ -46,6 +46,11 @@
   let passwordChangeError = $state("");
   let passwordChangeBusy = $state(false);
 
+  let exportVerifyMode = $state(false);
+  let exportPassword = $state("");
+  let exportError = $state("");
+  let exportBusy = $state(false);
+
   let pinEnabled = $state(false);
   let pinMode = $state<"idle" | "edit" | "remove">("idle");
   let pinValue = $state("");
@@ -160,6 +165,31 @@
       }
     } finally {
       passwordChangeBusy = false;
+    }
+  }
+
+  async function verifyAndOpenExport() {
+    if (exportPassword === "" || exportBusy) {
+      return;
+    }
+    exportBusy = true;
+    exportError = "";
+    try {
+      // 导出文件包含全部密码，先验证主密码——防「密码库已解锁、人却离开了座位」。
+      const verification = await sendMessage("vault:verifyPassword", {
+        masterPassword: exportPassword,
+      });
+
+      if (verification?.valid !== true) {
+        exportError = "主密码不正确";
+        return;
+      }
+
+      openInTab("export");
+      exportVerifyMode = false;
+      exportPassword = "";
+    } finally {
+      exportBusy = false;
     }
   }
 
@@ -386,10 +416,49 @@
 
   <section class="panel">
     <h2>数据</h2>
-    <div class="row">
-      <button class="btn btn-secondary" onclick={() => openInTab("import")}>导入</button>
-      <button class="btn btn-secondary" onclick={() => openInTab("export")}>导出</button>
-    </div>
+    {#if exportVerifyMode}
+      <div class="field">
+        <label for="export-pw">验证主密码</label>
+        <input
+          id="export-pw"
+          type="password"
+          bind:value={exportPassword}
+          autocomplete="current-password"
+          onkeydown={(e) => {
+            if (e.key === "Enter") {
+              void verifyAndOpenExport();
+            }
+          }}
+        />
+      </div>
+      {#if exportError !== ""}
+        <p class="alert">{exportError}</p>
+      {/if}
+      <div class="row">
+        <button
+          class="btn btn-secondary"
+          onclick={() => {
+            exportVerifyMode = false;
+            exportPassword = "";
+            exportError = "";
+          }}
+        >
+          取消
+        </button>
+        <button
+          class="btn"
+          onclick={() => void verifyAndOpenExport()}
+          disabled={exportBusy || exportPassword === ""}
+        >
+          {exportBusy ? "验证中…" : "验证并导出"}
+        </button>
+      </div>
+    {:else}
+      <div class="row">
+        <button class="btn btn-secondary" onclick={() => openInTab("import")}>导入</button>
+        <button class="btn btn-secondary" onclick={() => (exportVerifyMode = true)}>导出</button>
+      </div>
+    {/if}
     <button class="btn btn-secondary" onclick={clearTrash} disabled={busy}>清空回收站</button>
   </section>
 
