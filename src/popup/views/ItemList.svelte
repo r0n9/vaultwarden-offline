@@ -183,6 +183,9 @@
     {#each ciphersToShow as cipher, index (cipher.id)}
       {@const url = cipherUrl(cipher)}
       <li class="item-row" class:recommended={recommendFirst && index === 0}>
+        {#if recommendFirst && index === 0}
+          <span class="rec-badge">推荐</span>
+        {/if}
         <button class="item-main" onclick={() => onOpen(cipher.id)}>
           <CipherIcon {cipher} />
           <span class="text">
@@ -652,50 +655,29 @@
     background: var(--bg-subtle);
   }
 
-  /* 推荐条目（自动填充建议第一条）：旋转流光边框提示
-     实现：旋转整个 conic 伪元素（transform 动画），单段 30° 光带，
-     从 12 点方向开始沿顺时针流转；不依赖 CSS 变量插值，兼容性最好 */
+  /* 推荐条目（自动填充建议第一条）：主题色边框 + 淡色底 + 「推荐」标签 */
   .item-row.recommended {
-    border-color: transparent;
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 7%, var(--surface));
   }
 
-  .item-row.recommended::before {
-    content: "";
+  .item-row.recommended:hover {
+    border-color: var(--accent);
+  }
+
+  .rec-badge {
     position: absolute;
-    inset: -50%;
-    background: conic-gradient(
-      transparent 0deg 330deg,
-      var(--accent) 345deg 360deg,
-      transparent 360deg
-    );
-    animation: vwo-spin 3s linear infinite;
-    z-index: 0;
+    top: -8px;
+    right: 10px;
+    z-index: 2;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--accent-text);
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.5;
     pointer-events: none;
-  }
-
-  /* 内部遮罩：盖住中心，只让边框一圈（1px）露出流光 */
-  .item-row.recommended::after {
-    content: "";
-    position: absolute;
-    inset: 1px;
-    border-radius: 7px;
-    background: var(--surface);
-    z-index: 0;
-    pointer-events: none;
-  }
-
-  .item-row.recommended > * {
-    position: relative;
-    z-index: 1;
-  }
-
-  @keyframes vwo-spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
   }
 
   /* 尊重系统「减弱动态效果」设置 */
