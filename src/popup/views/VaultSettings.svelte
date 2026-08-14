@@ -140,6 +140,39 @@
   </section>
 
   <section class="panel">
+    <h2>自动锁定</h2>
+    {#if settings == null}
+      <p class="hint">读取中…</p>
+    {:else}
+      <div class="field">
+        <label for="timeout">锁定时机</label>
+        <select id="timeout" value={String(settings.vaultTimeout)} onchange={updateTimeout}>
+          {#each VAULT_TIMEOUT_OPTIONS as option (option.value)}
+            <option value={String(option.value)}>{option.label}</option>
+          {/each}
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="action">超时后</label>
+        <select id="action" value={settings.vaultTimeoutAction} onchange={updateAction}>
+          <option value={VaultTimeoutAction.Lock}>锁定（保留数据）</option>
+          <option value={VaultTimeoutAction.Clear}>清空（销毁本地数据）</option>
+        </select>
+        {#if settings.vaultTimeoutAction === VaultTimeoutAction.Clear}
+          <p class="hint warn">超时会永久删除本地密码库。请确认你已有导出备份。</p>
+        {/if}
+      </div>
+    {/if}
+  </section>
+
+  <section class="panel">
+    <h2>自动填充</h2>
+    <button class="btn btn-secondary" onclick={onOpenCollect}>检测当前页面字段</button>
+    <p class="hint">在打开的站点页面上识别登录表单与字段结构。</p>
+  </section>
+
+  <section class="panel">
     <h2>文件夹</h2>
     {#if folders.length === 0}
       <p class="hint">还没有文件夹。</p>
@@ -171,40 +204,13 @@
     <button class="btn btn-secondary" onclick={clearTrash} disabled={busy}>清空回收站</button>
   </section>
 
-  <section class="panel">
-    <h2>自动填充</h2>
-    <button class="btn btn-secondary" onclick={onOpenCollect}>检测当前页面字段</button>
-    <p class="hint">Phase 5 第 1 步：识别页面表单结构，暂不填充。</p>
-  </section>
+  <details class="self-test">
+    <summary>加密自检</summary>
+    <CryptoSelfTest />
+  </details>
 
-  <section class="panel">
-    <h2>自动锁定</h2>
-    {#if settings == null}
-      <p class="hint">读取中…</p>
-    {:else}
-      <div class="field">
-        <label for="timeout">锁定时机</label>
-        <select id="timeout" value={String(settings.vaultTimeout)} onchange={updateTimeout}>
-          {#each VAULT_TIMEOUT_OPTIONS as option (option.value)}
-            <option value={String(option.value)}>{option.label}</option>
-          {/each}
-        </select>
-      </div>
-
-      <div class="field">
-        <label for="action">超时后</label>
-        <select id="action" value={settings.vaultTimeoutAction} onchange={updateAction}>
-          <option value={VaultTimeoutAction.Lock}>锁定（保留数据）</option>
-          <option value={VaultTimeoutAction.Clear}>清空（销毁本地数据）</option>
-        </select>
-        {#if settings.vaultTimeoutAction === VaultTimeoutAction.Clear}
-          <p class="hint warn">超时会永久删除本地密码库。请确认你已有导出备份。</p>
-        {/if}
-      </div>
-    {/if}
-  </section>
-
-  <div class="actions">
+  <section class="panel danger">
+    <h2>危险区</h2>
     <button class="btn btn-secondary" onclick={lockNow}>立即锁定</button>
 
     {#if confirmingClear}
@@ -218,12 +224,7 @@
         销毁本地密码库
       </button>
     {/if}
-  </div>
-
-  <details>
-    <summary>加密自检</summary>
-    <CryptoSelfTest />
-  </details>
+  </section>
 </div>
 
 <style>
@@ -326,15 +327,20 @@
     color: var(--danger);
   }
 
-  .actions {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+  .panel.danger {
+    border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+    background: color-mix(in srgb, var(--danger) 5%, var(--surface));
   }
 
-  details {
-    border-top: 1px solid var(--border);
-    padding-top: 10px;
+  .panel.danger h2 {
+    color: var(--danger);
+  }
+
+  details.self-test {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    padding: 10px 12px;
   }
 
   summary {
