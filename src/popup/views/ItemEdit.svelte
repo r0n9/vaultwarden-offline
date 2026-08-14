@@ -41,6 +41,8 @@
   );
   let saving = $state(false);
   let showPasswordMenu = $state(false);
+  /** 密码默认不可见，可点击切换。 */
+  let showPassword = $state(false);
   /** 验证器密钥默认不可见，可点击切换。 */
   let showTotp = $state(false);
 
@@ -150,13 +152,22 @@
       <div class="with-action">
         <input
           id="password"
-          type="text"
+          type={showPassword ? "text" : "password"}
           value={draft.login?.password ?? ""}
           oninput={(e) => {
             draft.login = { ...(draft.login ?? {}), password: e.currentTarget.value };
           }}
           autocomplete="off"
         />
+        <button
+          type="button"
+          class="gen"
+          onclick={() => (showPassword = !showPassword)}
+          title={showPassword ? "隐藏" : "显示"}
+          aria-label={showPassword ? "隐藏" : "显示"}
+        >
+          {showPassword ? "🙈" : "👁"}
+        </button>
         {#if showPasswordMenu}
           <div class="gen-menu">
             <button type="button" onclick={generateStrong}>强密码（20 位）</button>
