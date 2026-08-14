@@ -54,9 +54,7 @@
   <button class="back" onclick={onBack}>‹ 返回</button>
 
   <h1>页面字段采集</h1>
-  <p class="hint">
-    Phase 5 第 1 步：只做识别与上报，还不会填充任何内容。
-  </p>
+  <p class="hint">识别当前页面的表单与字段结构，用于调试自动填充匹配。</p>
 
   {#if busy}
     <p class="hint">正在采集…</p>
