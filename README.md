@@ -75,12 +75,17 @@ content script 运行在宿主页面的 CSP 下、不受第 1 条约束，第 2 
   优先 `<link rel="icon">` 声明的地址，失败再猜 `/favicon.ico`
 - **失败回退**：Google s2 favicon 服务（`www.google.com/s2/favicons`），
   带 CORS、几乎 100% 可用；代价是域名会发送给 Google
+- **再回退**：DuckDuckGo icons（`icons.duckduckgo.com/ip3/{域名}.ico`，
+  大陆可达性更好，无重定向）
+- **失败冷却**：整条链路失败后 6 小时内不再重试（避免反复打不可达的网络），
+  成功即清除冷却
 - 获取时机：新增条目时、站点匹配出现时（静默获取并更新缓存）
 - 缓存：storage.local，键 `vwo:favicons:{域名}`；图标显示时先查缓存，
   未缓存回退到本地首字母色块
 
-CSP 与构建期校验对 Google 的图标服务做了对应放行：`connect-src` 仅多
-`www.google.com`（s2 接口）与 `t1.gstatic.com`（favicon 重定向后的静态资源域）。
+CSP 与构建期校验对图标服务做了对应放行：`connect-src` 仅多
+`www.google.com`（s2 接口）、`t1.gstatic.com`（Google favicon 重定向后的静态资源域）
+与 `icons.duckduckgo.com`（DuckDuckGo 回退源）。
 
 ---
 

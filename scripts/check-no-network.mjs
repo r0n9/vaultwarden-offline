@@ -52,7 +52,7 @@ const FORBIDDEN = [
   //   1. background：回退到 Google s2 favicon 服务（字面量 URL）
   //   2. content：同源获取站点 favicon，`fetch(target)` 中 target 为同源地址变量
   // 先从源码中剔除这两类白名单调用，其余 fetch 仍判定失败。
-  { name: "fetch()", pattern: /(?<![\w.$])fetch\s*\(/g, allowed: /fetch\s*\(\s*(?:["'`]https:\/\/www\.google\.com\/s2\/favicons|target\s*\))/ },
+  { name: "fetch()", pattern: /(?<![\w.$])fetch\s*\(/g, allowed: /fetch\s*\(\s*(?:["'`]https:\/\/www\.google\.com\/s2\/favicons|["'`]https:\/\/icons\.duckduckgo\.com\/ip3\/|target\s*\))/g },
   { name: "XMLHttpRequest", pattern: /\bXMLHttpRequest\b/g },
   { name: "WebSocket", pattern: /\bWebSocket\b/g },
   { name: "EventSource", pattern: /\bEventSource\b/g },
@@ -76,6 +76,7 @@ const URL_ALLOWLIST = [
   "https://github.com/r0n9/",
   // favicon 回退来源（唯一网络例外，见 README）：模板字面量拼接的域名。
   "https://www.google.com/s2/favicons",
+  "https://icons.duckduckgo.com/ip3/",
 ];
 
 async function collectJsFiles(dir) {
