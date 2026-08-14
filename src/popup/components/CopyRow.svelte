@@ -6,7 +6,17 @@
     value,
     secret = false,
     multiline = false,
-  }: { label: string; value: string; secret?: boolean; multiline?: boolean } = $props();
+    href,
+  }: {
+    label: string;
+    value: string;
+    secret?: boolean;
+    multiline?: boolean;
+    /** 提供时在复制按钮旁显示「在新标签页打开」按钮；仅 http/https 生效。 */
+    href?: string;
+  } = $props();
+
+  const isHttpHref = $derived(href != null && /^https?:/i.test(href));
 
   let revealed = $state(false);
   let copied = $state(false);
@@ -28,6 +38,21 @@
     <span class="value" class:mono={secret} class:multiline>{shown}</span>
 
     <div class="buttons">
+      {#if isHttpHref}
+        <a
+          class="link-btn"
+          href={href}
+          target="_blank"
+          rel="noreferrer"
+          title="在新标签页打开"
+          aria-label="在新标签页打开"
+        >
+          <!-- 外部链接图标（内联 SVG） -->
+          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6.5 3H3v10h10V9.5M9 3h4v4M13 3l-6.5 6.5" />
+          </svg>
+        </a>
+      {/if}
       {#if secret}
         <button
           type="button"
@@ -88,7 +113,8 @@
     flex: none;
   }
 
-  button {
+  button,
+  .link-btn {
     border: none;
     background: transparent;
     color: var(--text-muted);
@@ -97,9 +123,13 @@
     line-height: 1;
     padding: 2px 4px;
     border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
   }
 
-  button:hover {
+  button:hover,
+  .link-btn:hover {
     background: var(--bg-subtle);
     color: var(--text);
   }

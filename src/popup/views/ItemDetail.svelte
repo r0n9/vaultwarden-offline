@@ -137,7 +137,7 @@
         {/if}
         {#each cipher.login?.uris ?? [] as entry, index (index)}
           {#if entry.uri}
-            <CopyRow label={`网址 ${index + 1}`} value={entry.uri} />
+            <CopyRow label={`网址 ${index + 1}`} value={entry.uri} href={entry.uri} />
           {/if}
         {/each}
       {:else}
