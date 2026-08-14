@@ -260,25 +260,37 @@
 
   .tabs {
     display: flex;
+    gap: 4px;
+    padding: 5px 8px;
     border-top: 1px solid var(--border);
     background: var(--surface);
   }
 
-  /* 参考 Bitwarden：图标在上、文字在下，垂直排列；选中态主题色 + 顶部指示条 */
+  /* 参考 Bitwarden：图标在上、文字在下，垂直排列；选中态主题色 + 顶部指示条，
+     悬停显示圆角背景块作按钮反馈 */
   .tabs button {
     flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 3px;
-    padding: 8px 0 7px;
+    padding: 7px 0 6px;
     border: none;
+    border-radius: 8px;
     background: transparent;
     color: var(--text-muted);
     font-size: 11px;
     font-family: inherit;
     cursor: pointer;
     border-top: 2px solid transparent;
+    transition:
+      background-color 0.12s ease,
+      color 0.12s ease;
+  }
+
+  .tabs button:hover {
+    background: var(--bg-subtle);
+    color: var(--text);
   }
 
   .tabs button.active {
@@ -287,8 +299,9 @@
     font-weight: 600;
   }
 
-  .tabs button:not(.active):hover {
-    color: var(--text);
+  .tabs button.active:hover {
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    color: var(--accent);
   }
 
   .tab-icon {
