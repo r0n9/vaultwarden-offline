@@ -10,7 +10,15 @@
     sortCiphersForUrl,
   } from "@/core/vault/vault-search";
 
-  import { newFolderDraft, saveFolder } from "@/core/vault/vault-repository";
+  import {
+    getCipher,
+    newFolderDraft,
+    saveCipher,
+    saveFolder,
+    softDeleteCipher,
+    toggleFavorite as toggleFavoriteFn,
+  } from "@/core/vault/vault-repository";
+  import { sendMessage } from "@/platform/messaging";
   import { browserVaultStorage as storage } from "@/platform/storage/browser-vault-storage";
 
   import CipherIcon from "../components/CipherIcon.svelte";
@@ -22,6 +30,8 @@
     onOpen,
     onCreate,
     onFolderAdded,
+    onDataChanged,
+    onEdit,
   }: {
     ciphers: CipherView[];
     folders: FolderView[];
@@ -30,9 +40,84 @@
     onCreate: (type: CipherType) => void;
     /** 新增目录成功后通知上层刷新（目录列表变化）。 */
     onFolderAdded: () => void;
+    /** 数据变化（收藏/克隆/删除）后刷新条目列表。 */
+    onDataChanged: () => void;
+    /** 直接进入某条目的编辑页。 */
+    onEdit: (id: string) => void;
   } = $props();
 
   let query = $state("");
+  /** 当前展开「更多」菜单的条目 id。 */
+  let moreMenuFor = $state<string | null>(null);
+  /** 复制成功提示的条目 id。 */
+  let copiedId = $state<string | null>(null);
+  let actionBusy = $state(false);
+
+  /** 条目的可跳转网址（仅 http/https）。 */
+  function cipherUrl(cipher: CipherView): string | undefined {
+    return cipher.login?.uris?.find((entry) => entry.uri != null && /^https?:/i.test(entry.uri))?.uri;
+  }
+
+  async function copyPassword(cipher: CipherView) {
+    const value = cipher.login?.password || cipher.login?.username || "";
+    if (value === "") {
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(value);
+      copiedId = cipher.id;
+      setTimeout(() => (copiedId === cipher.id) && (copiedId = null), 1200);
+    } catch {
+      // 剪贴板不可用时静默。
+    }
+  }
+
+  async function runAction(action: () => Promise<unknown> | void) {
+    if (actionBusy) {
+      return;
+    }
+    actionBusy = true;
+    moreMenuFor = null;
+    try {
+      await action();
+      onDataChanged();
+    } finally {
+      actionBusy = false;
+    }
+  }
+
+  function toggleFavorite(cipher: CipherView) {
+    return runAction(() => toggleFavoriteFn(storage, cipher.id));
+  }
+
+  function cloneCipher(cipher: CipherView) {
+    return runAction(async () => {
+      const original = await getCipher(storage, cipher.id);
+      if (original == null) {
+        return;
+      }
+      const now = new Date().toISOString();
+      const clone: CipherView = {
+        ...original,
+        id: crypto.randomUUID(),
+        name: `${original.name}（副本）`,
+        favorite: false,
+        deletedDate: undefined,
+        creationDate: now,
+        revisionDate: now,
+      };
+      await saveCipher(storage, clone);
+    });
+  }
+
+  function deleteCipher(cipher: CipherView) {
+    return runAction(() => softDeleteCipher(storage, cipher.id));
+  }
+
+  function autofillCipher(cipher: CipherView) {
+    moreMenuFor = null;
+    void sendMessage("autofill:fillActiveTab", { cipherId: cipher.id });
+  }
   /** 筛选面板默认收起（参考 Bitwarden），点漏斗展开。 */
   let showFilters = $state(false);
   let folderFilter = $state("");
@@ -93,8 +178,9 @@
 {#snippet itemList(ciphersToShow: CipherView[])}
   <ul class="items">
     {#each ciphersToShow as cipher (cipher.id)}
-      <li>
-        <button class="item" onclick={() => onOpen(cipher.id)}>
+      {@const url = cipherUrl(cipher)}
+      <li class="item-row">
+        <button class="item-main" onclick={() => onOpen(cipher.id)}>
           <CipherIcon {cipher} />
           <span class="text">
             <span class="name">
@@ -105,8 +191,53 @@
               {cipherSubtitle(cipher) || CIPHER_TYPE_LABELS[cipher.type]}
             </span>
           </span>
-          <span class="chevron">›</span>
         </button>
+
+        <div class="item-actions">
+          {#if url != null}
+            <a
+              class="action"
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              title="打开网站"
+              aria-label="打开网站"
+            >
+              <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M6.5 3H3v10h10V9.5M9 3h4v4M13 3l-6.5 6.5" />
+              </svg>
+            </a>
+          {/if}
+          <button
+            class="action"
+            onclick={() => void copyPassword(cipher)}
+            title="复制密码（无密码则复制用户名）"
+            aria-label="复制密码"
+          >
+            {copiedId === cipher.id ? "✓" : "⧉"}
+          </button>
+          <div class="more-wrap">
+            <button
+              class="action"
+              onclick={() => (moreMenuFor = moreMenuFor === cipher.id ? null : cipher.id)}
+              title="更多"
+              aria-label="更多"
+            >
+              ⋮
+            </button>
+            {#if moreMenuFor === cipher.id}
+              <div class="more-menu">
+                <button onclick={() => autofillCipher(cipher)}>自动填充</button>
+                <button onclick={() => void toggleFavorite(cipher)}>
+                  {cipher.favorite ? "取消收藏" : "收藏"}
+                </button>
+                <button onclick={() => { moreMenuFor = null; onEdit(cipher.id); }}>编辑</button>
+                <button onclick={() => void cloneCipher(cipher)}>克隆</button>
+                <button class="danger" onclick={() => void deleteCipher(cipher)}>删除</button>
+              </div>
+            {/if}
+          </div>
+        </div>
       </li>
     {/each}
   </ul>
@@ -481,29 +612,111 @@
   }
 
   /* Bitwarden 风格条目行：卡片式（surface 底 + 圆角 + 细边框），行间留白 */
-  .item {
+  .item-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    width: 100%;
-    padding: 8px 10px;
+    gap: 6px;
+    padding: 4px 6px 4px 4px;
     border: 1px solid var(--border);
     border-radius: 8px;
     background: var(--surface);
-    color: inherit;
-    font-family: inherit;
-    text-align: left;
-    cursor: pointer;
     transition: border-color 0.12s ease, background-color 0.12s ease;
   }
 
-  .item:hover {
+  .item-row:hover {
     border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
     background: var(--bg-subtle);
   }
 
-  .item:active {
+  .item-main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+    padding: 4px;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  /* 操作按钮：默认隐藏，悬停/聚焦行时显示（Bitwarden 同款交互） */
+  .item-actions {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    flex: none;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+  }
+
+  .item-row:hover .item-actions,
+  .item-row:focus-within .item-actions,
+  .item-actions:has(.more-menu) {
+    opacity: 1;
+  }
+
+  .action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 5px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    text-decoration: none;
+  }
+
+  .action:hover {
     background: var(--bg-subtle);
+    color: var(--text);
+  }
+
+  .more-wrap {
+    position: relative;
+  }
+
+  .more-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 4px);
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    min-width: 120px;
+    padding: 4px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  }
+
+  .more-menu button {
+    padding: 6px 10px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text);
+    font-size: 12px;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .more-menu button:hover {
+    background: var(--bg-subtle);
+  }
+
+  .more-menu button.danger {
+    color: var(--danger);
   }
 
   .text {
@@ -531,11 +744,6 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-  }
-
-  .chevron {
-    color: var(--text-muted);
-    flex: none;
   }
 
   .empty {
