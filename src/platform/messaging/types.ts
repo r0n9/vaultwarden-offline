@@ -100,6 +100,10 @@ export interface MessageContracts {
     request: SaveCommitRequest;
     response: SaveCommitResult;
   };
+  "favicon:fetch": {
+    request: { url: string };
+    response: { ok: boolean };
+  };
 }
 
 /** 页面报告了新的凭据后，背景页给出的判定。 */

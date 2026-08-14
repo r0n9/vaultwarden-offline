@@ -1,26 +1,57 @@
 <script lang="ts">
+  import { extractHostname } from "@/core/vault/uri-matching";
   import { cipherHue, cipherInitial } from "@/core/vault/vault-search";
   import type { CipherView } from "@/core/vault/models";
+  import { storage } from "@/platform/browser-api";
 
   const { cipher, size = 32 }: { cipher: CipherView; size?: number } = $props();
 
   const hue = $derived(cipherHue(cipher));
+
+  // 缓存了站点 favicon 就用真实图标，否则回退到首字母色块。
+  let favicon = $state<string | undefined>(undefined);
+
+  $effect(() => {
+    const firstUri = cipher.login?.uris?.[0]?.uri;
+    if (firstUri == null) {
+      return;
+    }
+    const domain = extractHostname(firstUri);
+    if (domain == null) {
+      return;
+    }
+    void storage.local
+      .get<{ dataUrl?: string }>(`vwo:favicons:${domain}`)
+      .then((entry) => {
+        favicon = entry?.dataUrl;
+      });
+  });
 </script>
 
 <!--
-  站点图标完全本地生成。绝不请求 icons.bitwarden.net 之类的远程服务——
-  那等于把「用户在哪些站点有账号」这份极敏感的清单交给第三方。
+  有缓存时显示站点真实 favicon（获取方式见 background/favicon.ts）；
+  未缓存时回退到本地生成的首字母色块，绝不请求 icons.bitwarden.net。
 -->
-<span
-  class="icon"
-  style:width="{size}px"
-  style:height="{size}px"
-  style:font-size="{Math.round(size * 0.42)}px"
-  style:background="hsl({hue} 62% 46%)"
-  aria-hidden="true"
->
-  {cipherInitial(cipher)}
-</span>
+{#if favicon != null}
+  <img
+    class="icon favicon"
+    style:width="{size}px"
+    style:height="{size}px"
+    src={favicon}
+    alt=""
+  />
+{:else}
+  <span
+    class="icon"
+    style:width="{size}px"
+    style:height="{size}px"
+    style:font-size="{Math.round(size * 0.42)}px"
+    style:background="hsl({hue} 62% 46%)"
+    aria-hidden="true"
+  >
+    {cipherInitial(cipher)}
+  </span>
+{/if}
 
 <style>
   .icon {
@@ -32,5 +63,10 @@
     font-weight: 600;
     line-height: 1;
     user-select: none;
+  }
+
+  .favicon {
+    object-fit: cover;
+    background: var(--bg-subtle);
   }
 </style>

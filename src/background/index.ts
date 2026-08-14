@@ -42,6 +42,7 @@ import {
 import { fillActiveTab, fillTab } from "./autofill-fill";
 import { getCipher } from "@/core/vault/vault-repository";
 import { commitSave, handleSaveDetected } from "./save-detection";
+import { fetchFavicon } from "./favicon";
 import { registerBadgeTriggers, updateMatchBadge } from "./badge";
 import { pickShortcutTarget } from "./shortcut";
 
@@ -224,6 +225,11 @@ registerHandlers({
     await handleSaveDetected(vaultStorage, url, username),
 
   "save:commit": async (request) => await commitSave(vaultStorage, request),
+
+  "favicon:fetch": async ({ url }) => {
+    const [tab] = await api().tabs.query({ active: true, currentWindow: true });
+    return { ok: await fetchFavicon(url, tab?.id) };
+  },
 });
 
 // --- 生命周期与事件 -------------------------------------------------------

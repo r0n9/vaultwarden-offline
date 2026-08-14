@@ -4,6 +4,7 @@ import { getStatus } from "@/core/vault/vault.service";
 import { api } from "@/platform/browser-api";
 
 import { findMatchingLoginCiphers } from "./context-menu";
+import { fetchFavicon } from "./favicon";
 
 /**
  * 工具栏角标：当前站点匹配的登录条目数。
@@ -33,6 +34,11 @@ export async function updateMatchBadge(storage: VaultStorage): Promise<void> {
 
     const matches = await findMatchingLoginCiphers(storage, tab.url);
     const count = matches.length;
+
+    // 站点有匹配条目时顺带静默获取并更新 favicon 缓存（不阻塞角标）。
+    if (count > 0) {
+      void fetchFavicon(tab.url, tab.id);
+    }
 
     if (count === 0) {
       await api().action.setBadgeText({ text: "" });

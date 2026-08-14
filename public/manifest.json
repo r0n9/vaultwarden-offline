@@ -59,7 +59,7 @@
     "file:///*"
   ],
   "content_security_policy": {
-    "extension_pages": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; object-src 'self'; connect-src 'none'; frame-src 'self'; form-action 'none'; base-uri 'none'"
+    "extension_pages": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; object-src 'self'; connect-src 'none' https://www.google.com; frame-src 'self'; form-action 'none'; base-uri 'none'"
   },
   "commands": {
     "_execute_action": {

@@ -133,6 +133,8 @@
         if (type === CipherType.Login) {
           draft.login = { uris: [{ uri: activeUrl }] };
         }
+        // 新增条目时静默获取站点 favicon 并缓存。
+        void sendMessage("favicon:fetch", { url: activeUrl });
       }
       screen = { name: "edit", cipher: draft };
     }}

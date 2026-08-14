@@ -67,6 +67,20 @@ npx serve test/pages     # 或任意静态服务器
 
 content script 运行在宿主页面的 CSP 下、不受第 1 条约束，第 2 条正是为它兜底。
 
+### 唯一的网络例外：站点 favicon
+
+获取站点真实图标是**用户明确豁免**的例外，不视为违反零网络承诺：
+
+- **站点优先**：借助当前标签页 content script 做同源 fetch（同源无需 CORS），
+  优先 `<link rel="icon">` 声明的地址，失败再猜 `/favicon.ico`
+- **失败回退**：Google s2 favicon 服务（`www.google.com/s2/favicons`），
+  带 CORS、几乎 100% 可用；代价是域名会发送给 Google
+- 获取时机：新增条目时、站点匹配出现时（静默获取并更新缓存）
+- 缓存：storage.local，键 `vwo:favicons:{域名}`；图标显示时先查缓存，
+  未缓存回退到本地首字母色块
+
+CSP 与构建期校验对 Google s2 域名做了对应放行（`connect-src` 仅多这一个域名）。
+
 ---
 
 ## 架构

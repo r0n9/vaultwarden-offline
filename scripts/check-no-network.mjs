@@ -13,9 +13,46 @@ import { join, relative, resolve } from "node:path";
 
 const DIST = resolve(import.meta.dirname, "../dist");
 
+/** 按哨兵剔除 content script 的同源 favicon 获取调用（唯一网络例外之一）。 */
+function stripAllowedFaviconFetch(source) {
+  const marker = '"vwo-favicon-fetch-ok"';
+  let index = source.indexOf(marker);
+  while (index !== -1) {
+    // 哨兵在 fetch 的 options 里，向前找最近的 fetch( 调用。
+    const fetchIndex = source.lastIndexOf("fetch(", index);
+    if (fetchIndex === -1) {
+      break;
+    }
+    // 数括号配对，剔除整个调用。
+    let depth = 0;
+    let end = -1;
+    for (let i = fetchIndex + 6; i < source.length; i++) {
+      if (source[i] === "(") {
+        depth++;
+      } else if (source[i] === ")") {
+        depth--;
+        if (depth === 0) {
+          end = i;
+          break;
+        }
+      }
+    }
+    if (end === -1) {
+      break;
+    }
+    source = source.slice(0, fetchIndex) + source.slice(end + 1);
+    index = source.indexOf(marker);
+  }
+  return source;
+}
+
 /** 命中即判定构建失败。 */
 const FORBIDDEN = [
-  { name: "fetch()", pattern: /(?<![\w.$])fetch\s*\(/g },
+  // fetch 允许的唯一例外（用户已明确豁免零网络承诺，见 README）：
+  //   1. background：回退到 Google s2 favicon 服务（字面量 URL）
+  //   2. content：同源获取站点 favicon，`fetch(target)` 中 target 为同源地址变量
+  // 先从源码中剔除这两类白名单调用，其余 fetch 仍判定失败。
+  { name: "fetch()", pattern: /(?<![\w.$])fetch\s*\(/g, allowed: /fetch\s*\(\s*(?:["'`]https:\/\/www\.google\.com\/s2\/favicons|target\s*\))/ },
   { name: "XMLHttpRequest", pattern: /\bXMLHttpRequest\b/g },
   { name: "WebSocket", pattern: /\bWebSocket\b/g },
   { name: "EventSource", pattern: /\bEventSource\b/g },
@@ -37,6 +74,8 @@ const URL_ALLOWLIST = [
   // popup 底部的 GitHub 仓库链接：用户主动点击才由浏览器打开，
   // 扩展自身从不请求该地址。
   "https://github.com/r0n9/",
+  // favicon 回退来源（唯一网络例外，见 README）：模板字面量拼接的域名。
+  "https://www.google.com/s2/favicons",
 ];
 
 async function collectJsFiles(dir) {
@@ -73,8 +112,14 @@ for (const file of files) {
   const source = await readFile(file, "utf8");
   const shortName = relative(DIST, file);
 
-  for (const { name, pattern } of FORBIDDEN) {
-    const matches = source.match(pattern);
+  // 先剔除 content 的同源 favicon 获取（按哨兵标记），其余 fetch 仍会被拦。
+  const faviconStripped = stripAllowedFaviconFetch(source);
+
+  for (const { name, pattern, allowed } of FORBIDDEN) {
+    // 白名单调用（如 favicon 的 Google s2 fetch）先剔除，其余命中仍算违规。
+    const scanned =
+      allowed == null ? faviconStripped : faviconStripped.replace(allowed, "");
+    const matches = scanned.match(pattern);
     if (matches != null) {
       violations.push({ file: shortName, name, count: matches.length });
     }
