@@ -41,6 +41,8 @@
   );
   let saving = $state(false);
   let showPasswordMenu = $state(false);
+  /** 验证器密钥默认不可见，可点击切换。 */
+  let showTotp = $state(false);
 
   function generateStrong() {
     showPasswordMenu = false;
@@ -175,15 +177,26 @@
 
     <div class="field">
       <label for="totp">验证器密钥（TOTP）</label>
-      <input
-        id="totp"
-        type="text"
-        value={draft.login?.totp ?? ""}
-        oninput={(e) => {
-          draft.login = { ...(draft.login ?? {}), totp: e.currentTarget.value };
-        }}
-        autocomplete="off"
-      />
+      <div class="with-action">
+        <input
+          id="totp"
+          type={showTotp ? "text" : "password"}
+          value={draft.login?.totp ?? ""}
+          oninput={(e) => {
+            draft.login = { ...(draft.login ?? {}), totp: e.currentTarget.value };
+          }}
+          autocomplete="off"
+        />
+        <button
+          type="button"
+          class="gen"
+          onclick={() => (showTotp = !showTotp)}
+          title={showTotp ? "隐藏" : "显示"}
+          aria-label={showTotp ? "隐藏" : "显示"}
+        >
+          {showTotp ? "🙈" : "👁"}
+        </button>
+      </div>
     </div>
 
     <div class="field">
