@@ -13,6 +13,7 @@
   import FolderSettings from "./settings/FolderSettings.svelte";
   import PinSettings from "./settings/PinSettings.svelte";
   import SelfTestSettings from "./settings/SelfTestSettings.svelte";
+  import AutofillDebug from "./AutofillDebug.svelte";
 
   const {
     summary,
@@ -20,14 +21,12 @@
     cipherCount,
     loadMs,
     onChanged,
-    onOpenCollect,
   }: {
     summary: VaultSummary;
     folders: FolderView[];
     cipherCount: number;
     loadMs: number;
     onChanged: () => void;
-    onOpenCollect: () => void;
   } = $props();
 
   /** 当前二级页面；null 表示设置首页。 */
@@ -187,7 +186,9 @@
     />
   {/if}
 {:else if screen === "autofill"}
-  <AutofillSettings onOpenCollect={onOpenCollect} onBack={() => (screen = null)} />
+  <AutofillSettings onCollect={() => (screen = "collect")} onBack={() => (screen = null)} />
+{:else if screen === "collect"}
+  <AutofillDebug onBack={() => (screen = "autofill")} />
 {:else if screen === "pin"}
   <PinSettings onBack={() => (screen = null)} />
 {:else if screen === "folders"}

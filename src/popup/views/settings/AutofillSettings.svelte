@@ -3,9 +3,9 @@
   import { sendMessage } from "@/platform/messaging";
 
   const {
-    onOpenCollect,
+    onCollect,
     onBack,
-  }: { onOpenCollect: () => void; onBack: () => void } = $props();
+  }: { onCollect: () => void; onBack: () => void } = $props();
 
   let autofillShortcut = $state("");
 
@@ -30,7 +30,7 @@
 <button class="back" onclick={onBack}>‹ 返回</button>
 <h1>自动填充</h1>
 
-<button class="btn btn-secondary" onclick={onOpenCollect}>检测当前页面字段</button>
+<button class="btn btn-secondary" onclick={onCollect}>检测当前页面字段</button>
 <p class="hint">在打开的站点页面上识别登录表单与字段结构。</p>
 
 <button class="shortcut-row" onclick={openShortcutsPage}>

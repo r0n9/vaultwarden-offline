@@ -32,9 +32,6 @@
   let settingsLoadMs = $state(0);
   let settingsLoading = $state(false);
 
-  // 「检测当前页面字段」在 Settings tab 里，跳转到 Vault tab 的采集屏。
-  let collectRequest = $state(0);
-
   /** 应用外观：system 时移除标记（跟随系统媒体查询），否则强制对应主题。 */
   function applyTheme(theme: string | undefined): void {
     const root = document.documentElement;
@@ -81,10 +78,6 @@
     })();
   });
 
-  function openCollect() {
-    tab = "vault";
-    collectRequest += 1;
-  }
 </script>
 
 <header>
@@ -135,11 +128,7 @@
   {:else if summary.status === VaultStatus.Locked}
     <UnlockVault onUnlocked={refresh} />
   {:else if tab === "vault"}
-    <VaultShell
-      onChanged={refresh}
-      {collectRequest}
-      onCollectHandled={() => (collectRequest = 0)}
-    />
+    <VaultShell onChanged={refresh} />
   {:else if tab === "generator"}
     <GeneratorView />
   {:else}
@@ -152,7 +141,6 @@
         cipherCount={summary.cipherCount}
         loadMs={settingsLoadMs}
         onChanged={() => void refresh()}
-        onOpenCollect={openCollect}
       />
     {/if}
   {/if}

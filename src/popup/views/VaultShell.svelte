@@ -15,27 +15,16 @@
   import { sendMessage } from "@/platform/messaging";
   import { browserVaultStorage as storage } from "@/platform/storage/browser-vault-storage";
 
-  import AutofillDebug from "./AutofillDebug.svelte";
   import ItemDetail from "./ItemDetail.svelte";
   import ItemEdit from "./ItemEdit.svelte";
   import ItemList from "./ItemList.svelte";
 
-  const {
-    onChanged,
-    collectRequest,
-    onCollectHandled,
-  }: {
-    onChanged: () => void;
-    collectRequest: number;
-    /** 进入采集屏后调用，通知 App 消费该请求（否则每次挂载都强制回采集屏）。 */
-    onCollectHandled?: () => void;
-  } = $props();
+  const { onChanged }: { onChanged: () => void } = $props();
 
   type Screen =
     | { name: "list" }
     | { name: "detail"; id: string }
-    | { name: "edit"; cipher: CipherView }
-    | { name: "collect" };
+    | { name: "edit"; cipher: CipherView };
 
   let screen = $state<Screen>({ name: "list" });
   let ciphers = $state<CipherView[]>([]);
@@ -65,16 +54,6 @@
       loading = false;
     }
   }
-
-  // 设置页发起「检测当前页面字段」时，外部把 collectRequest 加一，
-  // 这里据此切到采集屏并**消费该请求**——否则该计数永久 >0，
-  // 每次挂载都强制进采集屏，从采集屏切走再切回就回不到列表了。
-  $effect(() => {
-    if (collectRequest > 0) {
-      screen = { name: "collect" };
-      onCollectHandled?.();
-    }
-  });
 
   $effect(() => {
     void (async () => {
@@ -106,8 +85,6 @@
 
 {#if loading}
   <p class="hint">正在解密条目…</p>
-{:else if screen.name === "collect"}
-  <AutofillDebug onBack={() => (screen = { name: "list" })} />
 {:else if screen.name === "edit"}
   <ItemEdit
     cipher={screen.cipher}
