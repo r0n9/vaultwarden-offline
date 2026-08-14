@@ -69,7 +69,17 @@ recovery** (a forgotten master password is unrecoverable — that is the price o
    select `manifest.json` in the extracted directory
 
 > Firefox temporary loading resets when the browser restarts; Chrome's unpacked
-> mode persists. Prefer building manually? See the next section.
+> mode persists.
+
+**First run**: after installation, open the extension and create your local vault — **either way**:
+> - **Import from a Bitwarden / Vaultwarden export file** — ideal for migration:
+>   pick the file, set a local master password, data lands in your vault
+> - **Create an empty vault directly** — start from scratch, then add items manually
+>   or via autofill-save prompts
+>
+> You can always import/export later under **Settings → Data**.
+
+> Prefer building manually? See the next section.
 
 ## Building (Developers)
 
