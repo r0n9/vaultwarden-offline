@@ -42,6 +42,19 @@
 
   let settings = $state<Settings | null>(null);
 
+  /** 折叠组展开状态（默认展开 外观/自动锁定 两个常用项）。 */
+  let openSections = $state(new Set<string>(["appearance", "autolock"]));
+
+  function toggleSection(key: string) {
+    const next = new Set(openSections);
+    if (next.has(key)) {
+      next.delete(key);
+    } else {
+      next.add(key);
+    }
+    openSections = next;
+  }
+
   let passwordChangeMode = $state(false);
   let currentPassword = $state("");
   let newPassword = $state("");
@@ -328,8 +341,14 @@
     </dl>
   </section>
 
-  <section class="panel">
-    <h2>外观</h2>
+  <section class="panel collapsible">
+    <button class="collapse-head" onclick={() => toggleSection("appearance")} aria-expanded={openSections.has("appearance")}>
+      <h2>外观</h2>
+      <span class="arrow">{openSections.has("appearance") ? "▾" : "▸"}</span>
+    </button>
+    {#if openSections.has("appearance")}
+      <div class="collapse-body">
+
     {#if settings == null}
       <p class="hint">读取中…</p>
     {:else}
@@ -357,10 +376,19 @@
         <p class="hint">深色与浅色均与 Bitwarden popup 配色一致。</p>
       </div>
     {/if}
-  </section>
+  
+      </div>
+    {/if}
+</section>
 
-  <section class="panel">
-    <h2>自动锁定</h2>
+  <section class="panel collapsible">
+    <button class="collapse-head" onclick={() => toggleSection("autolock")} aria-expanded={openSections.has("autolock")}>
+      <h2>自动锁定</h2>
+      <span class="arrow">{openSections.has("autolock") ? "▾" : "▸"}</span>
+    </button>
+    {#if openSections.has("autolock")}
+      <div class="collapse-body">
+
     {#if settings == null}
       <p class="hint">读取中…</p>
     {:else}
@@ -384,10 +412,19 @@
         {/if}
       </div>
     {/if}
-  </section>
+  
+      </div>
+    {/if}
+</section>
 
-  <section class="panel">
-    <h2>自动填充</h2>
+  <section class="panel collapsible">
+    <button class="collapse-head" onclick={() => toggleSection("autofill")} aria-expanded={openSections.has("autofill")}>
+      <h2>自动填充</h2>
+      <span class="arrow">{openSections.has("autofill") ? "▾" : "▸"}</span>
+    </button>
+    {#if openSections.has("autofill")}
+      <div class="collapse-body">
+
     <button class="btn btn-secondary" onclick={onOpenCollect}>检测当前页面字段</button>
     <p class="hint">在打开的站点页面上识别登录表单与字段结构。</p>
 
@@ -403,10 +440,19 @@
     <p class="hint">
       若快捷键被其他扩展占用，Chrome 可能不会分配——点击上方前往快捷键管理页手动设置。
     </p>
-  </section>
+  
+      </div>
+    {/if}
+</section>
 
-  <section class="panel">
-    <h2>解锁方式</h2>
+  <section class="panel collapsible">
+    <button class="collapse-head" onclick={() => toggleSection("pin")} aria-expanded={openSections.has("pin")}>
+      <h2>解锁方式</h2>
+      <span class="arrow">{openSections.has("pin") ? "▾" : "▸"}</span>
+    </button>
+    {#if openSections.has("pin")}
+      <div class="collapse-body">
+
     {#if pinMode === "idle"}
       <p class="pin-status">
         PIN 解锁：{pinEnabled ? "已启用" : "未设置"}
@@ -480,10 +526,19 @@
         </button>
       </div>
     {/if}
-  </section>
+  
+      </div>
+    {/if}
+</section>
 
-  <section class="panel">
-    <h2>文件夹</h2>
+  <section class="panel collapsible">
+    <button class="collapse-head" onclick={() => toggleSection("folders")} aria-expanded={openSections.has("folders")}>
+      <h2>文件夹</h2>
+      <span class="arrow">{openSections.has("folders") ? "▾" : "▸"}</span>
+    </button>
+    {#if openSections.has("folders")}
+      <div class="collapse-body">
+
     {#if folders.length === 0}
       <p class="hint">还没有文件夹。</p>
     {:else}
@@ -503,10 +558,19 @@
       <input type="text" placeholder="新文件夹名称" bind:value={newFolderName} />
       <button class="btn btn-secondary" onclick={addFolder} disabled={busy}>添加</button>
     </div>
-  </section>
+  
+      </div>
+    {/if}
+</section>
 
-  <section class="panel">
-    <h2>数据</h2>
+  <section class="panel collapsible">
+    <button class="collapse-head" onclick={() => toggleSection("data")} aria-expanded={openSections.has("data")}>
+      <h2>数据</h2>
+      <span class="arrow">{openSections.has("data") ? "▾" : "▸"}</span>
+    </button>
+    {#if openSections.has("data")}
+      <div class="collapse-body">
+
     {#if exportVerifyMode}
       <div class="field">
         <label for="export-pw">验证主密码</label>
@@ -551,12 +615,22 @@
       </div>
     {/if}
     <button class="btn btn-secondary" onclick={clearTrash} disabled={busy}>清空回收站</button>
-  </section>
+  
+      </div>
+    {/if}
+</section>
 
-  <details class="self-test">
-    <summary>加密自检</summary>
-    <CryptoSelfTest />
-  </details>
+  <section class="panel collapsible">
+    <button class="collapse-head" onclick={() => toggleSection("selftest")} aria-expanded={openSections.has("selftest")}>
+      <h2>加密自检</h2>
+      <span class="arrow">{openSections.has("selftest") ? "▾" : "▸"}</span>
+    </button>
+    {#if openSections.has("selftest")}
+      <div class="collapse-body">
+        <CryptoSelfTest />
+      </div>
+    {/if}
+  </section>
 
   <section class="panel danger">
     <h2>危险区</h2>
@@ -722,12 +796,46 @@
   }
 
   h2 {
-    margin: 0 0 8px;
+    margin: 0;
     font-size: 12px;
     font-weight: 600;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.04em;
+  }
+
+  .collapsible {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .collapse-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .collapse-head:hover h2 {
+    color: var(--accent);
+  }
+
+  .arrow {
+    color: var(--text-muted);
+    font-size: 11px;
+  }
+
+  .collapse-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 12px 12px;
   }
 
   .panel {
@@ -860,18 +968,5 @@
 
   .panel.danger h2 {
     color: var(--danger);
-  }
-
-  details.self-test {
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--surface);
-    padding: 10px 12px;
-  }
-
-  summary {
-    font-size: 12px;
-    color: var(--text-muted);
-    cursor: pointer;
   }
 </style>
