@@ -122,6 +122,7 @@
     {folders}
     {activeUrl}
     onOpen={(id) => (screen = { name: "detail", id })}
+    onFolderAdded={() => void refresh()}
     onCreate={(type: CipherType) => {
       // 新增条目：名称自动填当前站点域名，登录条目自动带上当前网址。
       const draft = newCipherDraft(type);

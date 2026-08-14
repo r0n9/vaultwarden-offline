@@ -9,6 +9,9 @@
     sortCiphers,
   } from "@/core/vault/vault-search";
 
+  import { newFolderDraft, saveFolder } from "@/core/vault/vault-repository";
+  import { browserVaultStorage as storage } from "@/platform/storage/browser-vault-storage";
+
   import CipherIcon from "../components/CipherIcon.svelte";
 
   const {
@@ -17,12 +20,15 @@
     activeUrl,
     onOpen,
     onCreate,
+    onFolderAdded,
   }: {
     ciphers: CipherView[];
     folders: FolderView[];
     activeUrl: string | undefined;
     onOpen: (id: string) => void;
     onCreate: (type: CipherType) => void;
+    /** 新增目录成功后通知上层刷新（目录列表变化）。 */
+    onFolderAdded: () => void;
   } = $props();
 
   let query = $state("");
@@ -32,6 +38,9 @@
   let typeFilter = $state("");
   let trashOnly = $state(false);
   let showNewMenu = $state(false);
+  let addFolderMode = $state(false);
+  let newFolderName = $state("");
+  let folderBusy = $state(false);
 
   const hasFilters = $derived(folderFilter !== "" || typeFilter !== "" || trashOnly);
   const searching = $derived(query.trim() !== "");
@@ -40,6 +49,23 @@
     ...(folderFilter === "" ? {} : { folderId: folderFilter === "none" ? null : folderFilter }),
     ...(typeFilter === "" ? {} : { type: Number(typeFilter) as CipherType }),
   });
+
+  async function addFolder() {
+    const name = newFolderName.trim();
+    if (name === "" || folderBusy) {
+      return;
+    }
+    folderBusy = true;
+    try {
+      await saveFolder(storage, newFolderDraft(name));
+      newFolderName = "";
+      addFolderMode = false;
+      showNewMenu = false;
+      onFolderAdded();
+    } finally {
+      folderBusy = false;
+    }
+  }
 
   /** 站点匹配条目（自动填充建议），收藏优先、名称次之。 */
   const siteMatches = $derived(
@@ -115,16 +141,52 @@
     <div class="new-wrap">
       {#if showNewMenu}
         <div class="type-menu">
-          {#each Object.entries(CIPHER_TYPE_LABELS) as [value, label] (value)}
-            <button
-              onclick={() => {
-                showNewMenu = false;
-                onCreate(Number(value) as CipherType);
-              }}
-            >
-              {label}
+          {#if addFolderMode}
+            <div class="folder-form">
+              <input
+                type="text"
+                placeholder="目录名称"
+                bind:value={newFolderName}
+                onkeydown={(e) => {
+                  if (e.key === "Enter") {
+                    void addFolder();
+                  } else if (e.key === "Escape") {
+                    addFolderMode = false;
+                    newFolderName = "";
+                  }
+                }}
+              />
+              <div class="folder-form-actions">
+                <button
+                  class="cancel"
+                  onclick={() => {
+                    addFolderMode = false;
+                    newFolderName = "";
+                  }}
+                >
+                  取消
+                </button>
+                <button class="confirm" onclick={() => void addFolder()} disabled={folderBusy || newFolderName.trim() === ""}>
+                  {folderBusy ? "创建中…" : "创建"}
+                </button>
+              </div>
+            </div>
+          {:else}
+            {#each Object.entries(CIPHER_TYPE_LABELS) as [value, label] (value)}
+              <button
+                onclick={() => {
+                  showNewMenu = false;
+                  onCreate(Number(value) as CipherType);
+                }}
+              >
+                {label}
+              </button>
+            {/each}
+            <div class="menu-divider"></div>
+            <button class="add-folder-option" onclick={() => (addFolderMode = true)}>
+              ＋ 新增目录
             </button>
-          {/each}
+          {/if}
         </div>
       {/if}
       <button class="new-btn" onclick={() => (showNewMenu = !showNewMenu)}>＋ 新增</button>
@@ -305,6 +367,59 @@
   .type-menu button:hover {
     background: var(--bg-subtle);
     border-color: var(--border);
+  }
+
+  .menu-divider {
+    grid-column: 1 / -1;
+    height: 1px;
+    background: var(--border);
+    margin: 2px 0;
+  }
+
+  .add-folder-option {
+    grid-column: 1 / -1;
+    color: var(--accent) !important;
+  }
+
+  .folder-form {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .folder-form input {
+    padding: 7px 9px;
+    font-size: 12px;
+  }
+
+  .folder-form-actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  .folder-form-actions button {
+    flex: 1;
+    padding: 6px 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .folder-form-actions .confirm {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-text);
+    font-weight: 600;
+  }
+
+  .folder-form-actions button:disabled {
+    opacity: 0.55;
+    cursor: default;
   }
 
   .filters {
