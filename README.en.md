@@ -205,3 +205,14 @@ that key instead of the UserKey. PIN unlock wraps the same UserKey with a PIN-de
 the encryption strength of the data is unchanged.
 
 ---
+
+---
+
+## License
+
+This project is open source under the **GNU GPL-3.0**, see [LICENSE](LICENSE).
+
+Why GPL: the project heavily borrows from Bitwarden (icons, wordlists, field-matching
+logic), which is itself GPL — GPL keeps these contributions permanently open. For a
+password manager, auditable code matters more than "closed-source promises".
+
