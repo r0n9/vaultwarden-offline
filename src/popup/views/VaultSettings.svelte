@@ -148,15 +148,25 @@
     }
   }
 
-  /** 设置首页的二级菜单项。 */
-  const MENU_ITEMS = [
-    { key: "appearance", title: "外观", desc: "跟随系统 / 浅色 / 深色" },
-    { key: "autolock", title: "自动锁定", desc: "锁定时机与超时动作" },
-    { key: "autofill", title: "自动填充", desc: "字段检测与快捷键" },
-    { key: "pin", title: "解锁方式", desc: "PIN 快捷解锁" },
-    { key: "folders", title: "文件夹", desc: "管理条目分类" },
-    { key: "data", title: "数据", desc: "导入 / 导出 / 回收站" },
-    { key: "selftest", title: "加密自检", desc: "验证加密原语正确性" },
+  /** 设置首页的二级菜单项（分组）。 */
+  const MENU_GROUPS = [
+    {
+      label: "常规",
+      items: [
+        { key: "appearance", title: "外观", desc: "跟随系统 / 浅色 / 深色" },
+        { key: "autolock", title: "自动锁定", desc: "锁定时机与超时动作" },
+        { key: "autofill", title: "自动填充", desc: "字段检测与快捷键" },
+        { key: "pin", title: "解锁方式", desc: "PIN 快捷解锁" },
+      ],
+    },
+    {
+      label: "数据管理",
+      items: [
+        { key: "folders", title: "文件夹", desc: "管理条目分类" },
+        { key: "data", title: "数据", desc: "导入 / 导出 / 回收站" },
+        { key: "selftest", title: "加密自检", desc: "验证加密原语正确性" },
+      ],
+    },
   ] as const;
 </script>
 
@@ -208,17 +218,22 @@
       </dl>
     </section>
 
-    <section class="panel menu">
-      {#each MENU_ITEMS as item (item.key)}
-        <button class="menu-row" onclick={() => (screen = item.key)}>
-          <span class="menu-text">
-            <span class="menu-title">{item.title}</span>
-            <span class="menu-desc">{item.desc}</span>
-          </span>
-          <span class="menu-arrow">›</span>
-        </button>
-      {/each}
-    </section>
+    {#each MENU_GROUPS as group (group.label)}
+      <div class="menu-group">
+        <span class="menu-group-label">{group.label}</span>
+        <section class="panel menu">
+          {#each group.items as item (item.key)}
+            <button class="menu-row" onclick={() => (screen = item.key)}>
+              <span class="menu-text">
+                <span class="menu-title">{item.title}</span>
+                <span class="menu-desc">{item.desc}</span>
+              </span>
+              <span class="menu-arrow">›</span>
+            </button>
+          {/each}
+        </section>
+      </div>
+    {/each}
 
     <section class="panel danger">
       <h2>危险区</h2>
@@ -400,6 +415,22 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+  }
+
+  /* 二级菜单分组 */
+  .menu-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .menu-group-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0 2px;
   }
 
   /* 二级菜单：每项一行（细分隔线区分），点击进入子页面 */
