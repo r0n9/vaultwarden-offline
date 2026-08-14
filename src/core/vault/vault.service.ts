@@ -48,6 +48,15 @@ export interface VaultMeta {
   wrappedUserKey: string;
   createdAt: string;
   updatedAt: string;
+
+  /**
+   * PIN 解锁：PIN 同样包裹一份 UserKey（与主密码包裹的是同一把钥匙）。
+   * 数据加密强度不变，PIN 只是另一种解锁方式——代价是 PIN 熵低，
+   * 浏览器端无系统设备锁保护，属于「便利换风险」。
+   */
+  pinWrappedUserKey?: string;
+  /** PIN 派生的专用 salt（base64，随机 16 字节），与主密码 salt 隔离。 */
+  pinSalt?: string;
 }
 
 interface ThrottleState {
@@ -309,6 +318,84 @@ export async function saveSettings(
   return merged;
 }
 
+// --- PIN 解锁 ---------------------------------------------------------------
+
+/** 设置或修改 PIN：用 PIN 派生密钥再包一份 UserKey。 */
+export async function setPin(storage: VaultStorage, pin: string): Promise<void> {
+  const error = validatePin(pin);
+  if (error != null) {
+    throw new Error(error);
+  }
+
+  const userKey = await requireUserKey(storage);
+  const meta = await getMeta(storage);
+  if (meta == null) {
+    throw new Error("本地没有密码库");
+  }
+
+  // PIN 的 salt 独立于主密码 salt，两者互不影响。
+  const pinSalt = generateSalt();
+  const pinKey = await deriveMasterKey(pin, pinSalt, meta.kdf);
+  const wrapped = await wrapKey(userKey, pinKey);
+
+  await storage.local.set(StorageKeys.VaultMeta, {
+    ...meta,
+    pinWrappedUserKey: wrapped.toString(),
+    pinSalt: toBase64(pinSalt),
+    updatedAt: new Date().toISOString(),
+  } satisfies VaultMeta);
+}
+
+/** 移除 PIN，恢复仅主密码解锁。 */
+export async function clearPin(storage: VaultStorage): Promise<void> {
+  const meta = await getMeta(storage);
+  if (meta == null) {
+    return;
+  }
+  const { pinWrappedUserKey: _pin, pinSalt: _salt, ...rest } = meta;
+  await storage.local.set(StorageKeys.VaultMeta, rest satisfies VaultMeta);
+}
+
+export async function hasPin(storage: VaultStorage): Promise<boolean> {
+  const meta = await getMeta(storage);
+  return meta?.pinWrappedUserKey != null && meta?.pinSalt != null;
+}
+
+/** 用 PIN 解锁，拿到与主密码解锁完全相同的 UserKey。 */
+export async function unlockWithPin(
+  storage: VaultStorage,
+  pin: string,
+  now: number = Date.now(),
+): Promise<SymmetricCryptoKey> {
+  const meta = await getMeta(storage);
+  if (meta == null) {
+    throw new Error("本地没有密码库");
+  }
+  if (meta.pinWrappedUserKey == null || meta.pinSalt == null) {
+    throw new Error("未设置 PIN");
+  }
+
+  // 与主密码解锁共用同一套节流（无论哪种方式失败都计数）。
+  const throttle = await readThrottle(storage);
+  if (throttle.lockedUntil != null && throttle.lockedUntil > now) {
+    throw new ThrottledError(throttle.lockedUntil - now);
+  }
+
+  const pinKey = await deriveMasterKey(pin, fromBase64(meta.pinSalt), meta.kdf);
+
+  let userKey: SymmetricCryptoKey;
+  try {
+    userKey = await unwrapKey(EncString.parse(meta.pinWrappedUserKey), pinKey);
+  } catch {
+    await recordFailure(storage, throttle, now);
+    throw new InvalidMasterPasswordError();
+  }
+
+  await storage.local.remove(StorageKeys.UnlockThrottle);
+  await startSession(storage, userKey, now);
+  return userKey;
+}
+
 // --- 最近使用 -------------------------------------------------------------
 
 /** 取最近一次填充过的登录条目 id。 */
@@ -394,6 +481,27 @@ export function validateMasterPassword(password: string): string | null {
   }
   if (!/\d/.test(password)) {
     return "需同时包含字母和数字";
+  }
+  return null;
+}
+
+/**
+ * PIN 规则：4-12 位，仅限数字与字母。
+ *
+ * 返回错误消息；合法返回 null。设置/修改 PIN 时校验。
+ */
+export function validatePin(pin: string): string | null {
+  if (pin.length === 0) {
+    return "PIN 不能为空";
+  }
+  if (pin.length < 4) {
+    return `至少 4 位，当前 ${pin.length} 位`;
+  }
+  if (pin.length > 12) {
+    return "最多 12 位";
+  }
+  if (!/^[a-zA-Z0-9]+$/.test(pin)) {
+    return "仅限数字和字母";
   }
   return null;
 }

@@ -11,8 +11,13 @@ import {
   InvalidMasterPasswordError,
   ThrottledError,
   validateMasterPassword,
+  validatePin,
   changeMasterPassword,
+  clearPin,
   clearVault,
+  hasPin,
+  setPin,
+  unlockWithPin,
   createVault,
   getLastActivity,
   getLastUsedLogin,
@@ -301,6 +306,98 @@ describe("会话与活动时间", () => {
     await lock(storage);
 
     await expect(requireUserKey(storage)).rejects.toThrow(/锁定状态/);
+  });
+});
+
+describe("PIN 解锁", () => {
+  it("规则校验：4-12 位数字字母", () => {
+    expect(validatePin("")).toBe("PIN 不能为空");
+    expect(validatePin("abc")).toBe("至少 4 位，当前 3 位");
+    expect(validatePin("1234567890123")).toBe("最多 12 位");
+    expect(validatePin("ab@12")).toBe("仅限数字和字母");
+    expect(validatePin("abcd")).toBeNull();
+    expect(validatePin("1234")).toBeNull();
+    expect(validatePin("a1b2c3d4e5f6")).toBeNull();
+  });
+
+  it("设置后可查询，且解锁拿到与主密码相同的 UserKey", async () => {
+    await createVault(storage, "master-pass1", { kdf: FAST_KDF });
+    const masterKey = await getSessionUserKey(storage);
+
+    expect(await hasPin(storage)).toBe(false);
+    await setPin(storage, "2468");
+    expect(await hasPin(storage)).toBe(true);
+
+    await lock(storage);
+    const pinUserKey = await unlockWithPin(storage, "2468");
+
+    // 关键：PIN 解锁拿到的是同一把 UserKey，之前加密的数据必须能解开。
+    expect(pinUserKey.toBase64()).toBe(masterKey?.toBase64());
+    expect(await getStatus(storage)).toBe(VaultStatus.Unlocked);
+  });
+
+  it("错误 PIN 被拒绝并计入节流", async () => {
+    await createVault(storage, "master-pass1", { kdf: FAST_KDF });
+    await setPin(storage, "2468");
+    await lock(storage);
+
+    const now = 1_000_000;
+    // 前两次是免罚额度。
+    await expect(unlockWithPin(storage, "9999", now)).rejects.toThrow(InvalidMasterPasswordError);
+    await expect(unlockWithPin(storage, "9999", now)).rejects.toThrow(InvalidMasterPasswordError);
+    // 第三次失败开始上锁。
+    await expect(unlockWithPin(storage, "9999", now)).rejects.toThrow(InvalidMasterPasswordError);
+    // 冷却期内正确 PIN 也被拒；主密码解锁共用同一套节流。
+    await expect(unlockWithPin(storage, "2468", now)).rejects.toThrow(ThrottledError);
+  });
+
+  it("未设置 PIN 时解锁报错", async () => {
+    await createVault(storage, "master-pass1", { kdf: FAST_KDF });
+    await lock(storage);
+
+    await expect(unlockWithPin(storage, "2468")).rejects.toThrow(/未设置 PIN/);
+  });
+
+  it("移除 PIN 后无法再用 PIN 解锁", async () => {
+    await createVault(storage, "master-pass1", { kdf: FAST_KDF });
+    await setPin(storage, "2468");
+    await clearPin(storage);
+
+    expect(await hasPin(storage)).toBe(false);
+    await lock(storage);
+    await expect(unlockWithPin(storage, "2468")).rejects.toThrow(/未设置 PIN/);
+  });
+
+  it("设置 PIN 拒绝不合规值", async () => {
+    await createVault(storage, "master-pass1", { kdf: FAST_KDF });
+
+    await expect(setPin(storage, "12")).rejects.toThrow(/至少 4 位/);
+    await expect(setPin(storage, "ab@1")).rejects.toThrow(/仅限数字和字母/);
+  });
+
+  it("修改 PIN 后旧 PIN 失效、新 PIN 生效", async () => {
+    await createVault(storage, "master-pass1", { kdf: FAST_KDF });
+    await setPin(storage, "2468");
+    await setPin(storage, "13579");
+    await lock(storage);
+
+    await expect(unlockWithPin(storage, "2468")).rejects.toThrow(InvalidMasterPasswordError);
+    expect((await unlockWithPin(storage, "13579")).key.length).toBe(64);
+  });
+
+  it("PIN 解锁成功后清空节流计数", async () => {
+    await createVault(storage, "master-pass1", { kdf: FAST_KDF });
+    await setPin(storage, "2468");
+    await lock(storage);
+
+    const now = 1_000_000;
+    await expect(unlockWithPin(storage, "9999", now)).rejects.toThrow(InvalidMasterPasswordError);
+    await unlockWithPin(storage, "2468", now);
+    await lock(storage);
+
+    // 计数已清零：又能连续错两次而不被节流。
+    await expect(unlockWithPin(storage, "9999", now)).rejects.toThrow(InvalidMasterPasswordError);
+    await expect(unlockWithPin(storage, "9999", now)).rejects.toThrow(InvalidMasterPasswordError);
   });
 });
 

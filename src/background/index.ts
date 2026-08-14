@@ -19,6 +19,10 @@ import {
   saveSettings,
   touchActivity,
   unlock,
+  clearPin,
+  hasPin,
+  setPin,
+  unlockWithPin,
   verifyMasterPassword,
 } from "@/core/vault/vault.service";
 import { api, runtime } from "@/platform/browser-api";
@@ -229,6 +233,37 @@ registerHandlers({
   "favicon:fetch": async ({ url }) => {
     const [tab] = await api().tabs.query({ active: true, currentWindow: true });
     return { ok: await fetchFavicon(url, tab?.id) };
+  },
+
+  "vault:hasPin": async () => ({ hasPin: await hasPin(vaultStorage) }),
+
+  "vault:setPin": async ({ pin }) => {
+    try {
+      await setPin(vaultStorage, pin);
+      return { ok: true, value: { ok: true as const } };
+    } catch (e) {
+      logger.error("设置 PIN 失败:", e);
+      return failure(e);
+    }
+  },
+
+  "vault:clearPin": async () => {
+    try {
+      await clearPin(vaultStorage);
+      return { ok: true, value: { ok: true as const } };
+    } catch (e) {
+      logger.error("移除 PIN 失败:", e);
+      return failure(e);
+    }
+  },
+
+  "vault:unlockWithPin": async ({ pin }) => {
+    try {
+      await unlockWithPin(vaultStorage, pin);
+      return { ok: true, value: { status: await currentStatusAndRefresh() } };
+    } catch (e) {
+      return failure(e);
+    }
   },
 });
 

@@ -82,7 +82,7 @@
 
 ## P1 — 第二阶段
 
-PIN 解锁 · 附件本地加密存储（IndexedDB）· 本地密码健康检查（弱/重复/过期）· 侧边栏模式 ·
+附件本地加密存储（IndexedDB）· 本地密码健康检查（弱/重复/过期）· 侧边栏模式 ·
 第三方导入器（Chrome / Firefox / KeePass2 / 1Password / LastPass / NordPass / ProtonPass）·
 修改主密码与 UserKey 轮换 · 剪贴板自动清除 · 页面加载自动填充
 

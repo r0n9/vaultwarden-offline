@@ -104,6 +104,22 @@ export interface MessageContracts {
     request: { url: string };
     response: { ok: boolean };
   };
+  "vault:hasPin": {
+    request: undefined;
+    response: { hasPin: boolean };
+  };
+  "vault:setPin": {
+    request: { pin: string };
+    response: Result<{ ok: true }>;
+  };
+  "vault:clearPin": {
+    request: undefined;
+    response: Result<{ ok: true }>;
+  };
+  "vault:unlockWithPin": {
+    request: { pin: string };
+    response: Result<{ status: VaultStatus }>;
+  };
 }
 
 /** 页面报告了新的凭据后，背景页给出的判定。 */
