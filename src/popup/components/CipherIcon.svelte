@@ -1,14 +1,13 @@
 <script lang="ts">
   import { extractHostname } from "@/core/vault/uri-matching";
-  import { cipherHue, cipherInitial } from "@/core/vault/vault-search";
   import type { CipherView } from "@/core/vault/models";
   import { storage } from "@/platform/browser-api";
 
+  import { DEFAULT_CIPHER_ICONS, DEFAULT_ICON_VIEWBOX } from "../lib/default-cipher-icons";
+
   const { cipher, size = 32 }: { cipher: CipherView; size?: number } = $props();
 
-  const hue = $derived(cipherHue(cipher));
-
-  // 缓存了站点 favicon 就用真实图标，否则回退到首字母色块。
+  // 有缓存 favicon 用真实图标；没有则显示类型默认图标（Bitwarden 同款行为）。
   let favicon = $state<string | undefined>(undefined);
 
   $effect(() => {
@@ -28,10 +27,6 @@
   });
 </script>
 
-<!--
-  有缓存时显示站点真实 favicon（获取方式见 background/favicon.ts）；
-  未缓存时回退到本地生成的首字母色块，绝不请求 icons.bitwarden.net。
--->
 {#if favicon != null}
   <img
     class="icon favicon"
@@ -41,15 +36,24 @@
     alt=""
   />
 {:else}
+  <!-- 类型默认图标（取自 Bitwarden bwi 图标字体） -->
   <span
-    class="icon"
+    class="icon default"
     style:width="{size}px"
     style:height="{size}px"
-    style:font-size="{Math.round(size * 0.42)}px"
-    style:background="hsl({hue} 62% 46%)"
     aria-hidden="true"
   >
-    {cipherInitial(cipher)}
+    {#if DEFAULT_CIPHER_ICONS[cipher.type] != null}
+      <svg
+        viewBox={DEFAULT_ICON_VIEWBOX}
+        style:width="{Math.round(size * 0.55)}px"
+        style:height="{Math.round(size * 0.55)}px"
+        fill="currentColor"
+        aria-hidden="true"
+      >
+        <path d={DEFAULT_CIPHER_ICONS[cipher.type]!.path} />
+      </svg>
+    {/if}
   </span>
 {/if}
 
@@ -68,5 +72,12 @@
   .favicon {
     object-fit: cover;
     background: var(--bg-subtle);
+  }
+
+  /* 默认图标：淡灰圆底 + 灰色类型图标（Bitwarden 无 favicon 时的呈现） */
+  .default {
+    background: var(--bg-subtle);
+    color: var(--text-muted);
+    border-radius: 50%;
   }
 </style>
