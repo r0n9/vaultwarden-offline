@@ -99,5 +99,15 @@
     "lock_vault": {
       "description": "__MSG_commandLockVault__"
     }
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "images/*"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
 }

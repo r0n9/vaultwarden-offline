@@ -19,7 +19,8 @@
   }
   w[FLAG] = true;
 
-  const BUTTON_SIZE = 22;
+  /** 浮层按钮尺寸（产品图标为 38px 源图，等比缩放到按钮内）。 */
+  const BUTTON_SIZE = 30;
 
   let activeButton: { el: HTMLElement; field: HTMLElement } | null = null;
   let activeMenu: { el: HTMLElement; field: HTMLElement } | null = null;
@@ -70,20 +71,22 @@
     style.zIndex = "2147483646";
     style.width = `${BUTTON_SIZE}px`;
     style.height = `${BUTTON_SIZE}px`;
-    style.display = "grid";
-    style.placeItems = "center";
     style.cursor = "pointer";
-    style.borderRadius = "50%";
-    style.background = "#0f172a";
-    style.color = "#facc15";
-    style.boxShadow = "0 2px 8px rgba(0,0,0,.3)";
-    style.boxSizing = "border-box";
+    style.boxShadow = "0 2px 10px rgba(0,0,0,.35)";
+    style.borderRadius = "8px";
     style.userSelect = "none";
     style.left = `${Math.max(rect.right - BUTTON_SIZE - 4, 0)}px`;
     style.top = `${rect.top + 2}px`;
 
-    // 闪电图标（内联 SVG，与生成器语义一致）。
-    button.innerHTML = `<svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M9.5 1.5 3.5 9h3.5l-1.3 5.5 6-6.8H8.2Z"/></svg>`;
+    // 产品图标（盾牌 + 钥匙孔），取自扩展资源。
+    const icon = document.createElement("img");
+    icon.src = chrome.runtime.getURL("images/icon38.png");
+    icon.alt = "";
+    icon.style.display = "block";
+    icon.style.width = `${BUTTON_SIZE}px`;
+    icon.style.height = `${BUTTON_SIZE}px`;
+    icon.style.borderRadius = "8px";
+    button.appendChild(icon);
 
     button.addEventListener("click", (event) => {
       event.stopPropagation();
