@@ -40,6 +40,21 @@
         "file:///*.xml*"
       ],
       "run_at": "document_start"
+    },
+    {
+      "all_frames": true,
+      "js": [
+        "content/autofill-overlay.js"
+      ],
+      "matches": [
+        "*://*/*",
+        "file:///*"
+      ],
+      "exclude_matches": [
+        "*://*/*.xml*",
+        "file:///*.xml*"
+      ],
+      "run_at": "document_start"
     }
   ],
   "permissions": [

@@ -141,6 +141,17 @@ export interface MessageContracts {
     request: { cipherId: string; attachmentId: string };
     response: Result<{ ok: true }>;
   };
+  "overlay:getMatches": {
+    request: { url: string };
+    response: { items: OverlayMatch[] };
+  };
+}
+
+/** 内联菜单浮层展示的条目摘要（不含密码）。 */
+export interface OverlayMatch {
+  cipherId: string;
+  name: string;
+  username?: string;
 }
 
 /** 附件下载结果（解密后的文件数据）。 */

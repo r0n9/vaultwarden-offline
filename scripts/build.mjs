@@ -27,6 +27,7 @@ const CONTENT_SCRIPTS = [
   "autofill-collector",
   "autofill-filler",
   "save-detector",
+  "autofill-overlay",
 ];
 
 const sharedResolve = {

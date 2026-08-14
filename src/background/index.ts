@@ -302,6 +302,20 @@ registerHandlers({
   "attachment:get": async ({ attachmentId }) =>
     await getAttachmentBytes(vaultStorage, attachmentId),
 
+  "overlay:getMatches": async ({ url }) => {
+    if ((await getStatus(vaultStorage)) !== VaultStatus.Unlocked) {
+      return { items: [] };
+    }
+    const matches = await findMatchingLoginCiphers(vaultStorage, url);
+    return {
+      items: matches.map((cipher) => ({
+        cipherId: cipher.id,
+        name: cipher.name,
+        username: cipher.login?.username,
+      })),
+    };
+  },
+
   "attachment:delete": async ({ cipherId, attachmentId }) => {
     const result = await removeAttachment(vaultStorage, cipherId, attachmentId);
     return result.ok
