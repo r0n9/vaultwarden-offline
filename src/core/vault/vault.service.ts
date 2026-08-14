@@ -79,6 +79,13 @@ export class InvalidMasterPasswordError extends Error {
   }
 }
 
+export class InvalidPinError extends Error {
+  constructor() {
+    super("PIN 不正确");
+    this.name = "InvalidPinError";
+  }
+}
+
 export class ThrottledError extends Error {
   readonly retryAfterMs: number;
 
@@ -388,7 +395,7 @@ export async function unlockWithPin(
     userKey = await unwrapKey(EncString.parse(meta.pinWrappedUserKey), pinKey);
   } catch {
     await recordFailure(storage, throttle, now);
-    throw new InvalidMasterPasswordError();
+    throw new InvalidPinError();
   }
 
   await storage.local.remove(StorageKeys.UnlockThrottle);

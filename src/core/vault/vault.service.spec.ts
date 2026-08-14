@@ -9,6 +9,7 @@ import { VaultStatus } from "@/core/state/vault-status";
 
 import {
   InvalidMasterPasswordError,
+  InvalidPinError,
   ThrottledError,
   validateMasterPassword,
   validatePin,
@@ -343,10 +344,10 @@ describe("PIN 解锁", () => {
 
     const now = 1_000_000;
     // 前两次是免罚额度。
-    await expect(unlockWithPin(storage, "9999", now)).rejects.toThrow(InvalidMasterPasswordError);
-    await expect(unlockWithPin(storage, "9999", now)).rejects.toThrow(InvalidMasterPasswordError);
+    await expect(unlockWithPin(storage, "9999", now)).rejects.toThrow(InvalidPinError);
+    await expect(unlockWithPin(storage, "9999", now)).rejects.toThrow(InvalidPinError);
     // 第三次失败开始上锁。
-    await expect(unlockWithPin(storage, "9999", now)).rejects.toThrow(InvalidMasterPasswordError);
+    await expect(unlockWithPin(storage, "9999", now)).rejects.toThrow(InvalidPinError);
     // 冷却期内正确 PIN 也被拒；主密码解锁共用同一套节流。
     await expect(unlockWithPin(storage, "2468", now)).rejects.toThrow(ThrottledError);
   });
@@ -381,7 +382,7 @@ describe("PIN 解锁", () => {
     await setPin(storage, "13579");
     await lock(storage);
 
-    await expect(unlockWithPin(storage, "2468")).rejects.toThrow(InvalidMasterPasswordError);
+    await expect(unlockWithPin(storage, "2468")).rejects.toThrow(InvalidPinError);
     expect((await unlockWithPin(storage, "13579")).key.length).toBe(64);
   });
 
@@ -391,13 +392,13 @@ describe("PIN 解锁", () => {
     await lock(storage);
 
     const now = 1_000_000;
-    await expect(unlockWithPin(storage, "9999", now)).rejects.toThrow(InvalidMasterPasswordError);
+    await expect(unlockWithPin(storage, "9999", now)).rejects.toThrow(InvalidPinError);
     await unlockWithPin(storage, "2468", now);
     await lock(storage);
 
     // 计数已清零：又能连续错两次而不被节流。
-    await expect(unlockWithPin(storage, "9999", now)).rejects.toThrow(InvalidMasterPasswordError);
-    await expect(unlockWithPin(storage, "9999", now)).rejects.toThrow(InvalidMasterPasswordError);
+    await expect(unlockWithPin(storage, "9999", now)).rejects.toThrow(InvalidPinError);
+    await expect(unlockWithPin(storage, "9999", now)).rejects.toThrow(InvalidPinError);
   });
 });
 

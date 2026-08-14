@@ -6,6 +6,7 @@ import {
 import { VaultStatus } from "@/core/state/vault-status";
 import {
   InvalidMasterPasswordError,
+  InvalidPinError,
   ThrottledError,
   clearVault,
   createVault,
@@ -133,6 +134,9 @@ function failure(error: unknown): Result<never> {
   }
   if (error instanceof InvalidMasterPasswordError) {
     return { ok: false, code: ErrorCode.InvalidMasterPassword, message: error.message };
+  }
+  if (error instanceof InvalidPinError) {
+    return { ok: false, code: ErrorCode.InvalidPin, message: error.message };
   }
   return {
     ok: false,

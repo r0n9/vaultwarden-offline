@@ -22,6 +22,7 @@ export type Result<T> =
 
 export const ErrorCode = {
   InvalidMasterPassword: "invalid-master-password",
+  InvalidPin: "invalid-pin",
   Throttled: "throttled",
   VaultLocked: "vault-locked",
   Unexpected: "unexpected",
