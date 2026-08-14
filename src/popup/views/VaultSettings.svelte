@@ -402,7 +402,7 @@
     gap: 8px;
   }
 
-  /* 二级菜单：每项一行，点击进入子页面 */
+  /* 二级菜单：每项一行（细分隔线区分），点击进入子页面 */
   .panel.menu {
     padding: 4px;
   }
@@ -413,18 +413,34 @@
     justify-content: space-between;
     gap: 8px;
     width: 100%;
-    padding: 10px 8px;
+    padding: 11px 8px;
     border: none;
-    border-radius: 6px;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
     background: transparent;
     color: var(--text);
     font-family: inherit;
     text-align: left;
     cursor: pointer;
+    transition: background-color 0.12s ease;
+  }
+
+  .menu-row:last-child {
+    border-bottom: none;
   }
 
   .menu-row:hover {
     background: var(--bg-subtle);
+  }
+
+  .menu-row:first-child {
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+  }
+
+  .menu-row:last-child {
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
   }
 
   .menu-text {
