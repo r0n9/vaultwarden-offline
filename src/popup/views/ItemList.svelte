@@ -121,6 +121,14 @@
     moreMenuFor = null;
     void sendMessage("autofill:fillActiveTab", { cipherId: cipher.id });
   }
+  /** 搜索框 DOM 引用：挂载后自动聚焦，输入即搜（参考 Bitwarden）。 */
+  let searchInput = $state<HTMLInputElement | null>(null);
+
+  // 从详情/编辑返回列表、或弹窗重新打开时，光标都落在搜索框里。
+  $effect(() => {
+    searchInput?.focus();
+  });
+
   /** 筛选面板默认收起（参考 Bitwarden），点漏斗展开。 */
   let showFilters = $state(false);
   let folderFilter = $state("");
@@ -277,6 +285,7 @@
         type="text"
         placeholder="搜索名称、用户名、网址、备注…"
         bind:value={query}
+        bind:this={searchInput}
       />
       {#if searching}
         <button class="clear" onclick={() => (query = "")} title="清除搜索" aria-label="清除搜索">
