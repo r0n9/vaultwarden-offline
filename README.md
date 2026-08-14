@@ -79,7 +79,8 @@ content script 运行在宿主页面的 CSP 下、不受第 1 条约束，第 2 
 - 缓存：storage.local，键 `vwo:favicons:{域名}`；图标显示时先查缓存，
   未缓存回退到本地首字母色块
 
-CSP 与构建期校验对 Google s2 域名做了对应放行（`connect-src` 仅多这一个域名）。
+CSP 与构建期校验对 Google 的图标服务做了对应放行：`connect-src` 仅多
+`www.google.com`（s2 接口）与 `t1.gstatic.com`（favicon 重定向后的静态资源域）。
 
 ---
 
