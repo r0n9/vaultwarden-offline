@@ -7,6 +7,7 @@
     cipherSubtitle,
     filterCiphers,
     sortCiphers,
+    sortCiphersForUrl,
   } from "@/core/vault/vault-search";
 
   import { newFolderDraft, saveFolder } from "@/core/vault/vault-repository";
@@ -74,7 +75,10 @@
       : ciphers.filter((cipher) => cipher.deletedDate == null && cipherMatchesUrl(cipher, activeUrl)),
   );
 
-  const filteredSiteMatches = $derived(filterCiphers(siteMatches, filterArgs));
+  /** 自动填充建议：筛选后按域名层级精度排序——与站点 URI 完全相同的条目排最前。 */
+  const filteredSiteMatches = $derived(
+    sortCiphersForUrl(filterCiphers(siteMatches, filterArgs), activeUrl ?? ""),
+  );
 
   /** 全部项目（回收站独立展示）。 */
   const allItems = $derived(sortCiphers(filterCiphers(ciphers, { trash: false, ...filterArgs })));
