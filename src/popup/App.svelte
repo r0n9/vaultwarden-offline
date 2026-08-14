@@ -157,10 +157,11 @@
       <span>生成器</span>
     </button>
     <button class:active={tab === "settings"} onclick={() => (tab = "settings")}>
-      <!-- 齿轮：设置 -->
+      <!-- 齿轮：设置（外圈 + 中心孔 + 十字辐条） -->
       <svg class="tab-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="8" cy="8" r="2.4" />
-        <path d="M8 1.2v2.1M8 12.7v2.1M1.2 8h2.1M12.7 8h2.1M3.2 3.2l1.5 1.5M11.3 11.3l1.5 1.5M12.8 3.2l-1.5 1.5M4.7 11.3l-1.5 1.5" />
+        <circle cx="8" cy="8" r="5.2" />
+        <circle cx="8" cy="8" r="1.5" />
+        <path d="M8 1.2v3.6M8 11.2v3.6M1.2 8h3.6M11.2 8h3.6" />
       </svg>
       <span>设置</span>
     </button>
