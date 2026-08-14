@@ -9,6 +9,10 @@
 
 ---
 
+<img src="vaultwarden-offline.png" alt="Vaultwarden Offline 界面预览" width="100%">
+
+---
+
 ## 特性
 
 - **完全离线** —— 无账户、无同步、无遥测；数据只存在你的设备上
