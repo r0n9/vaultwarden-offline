@@ -260,7 +260,12 @@
   document.addEventListener(
     "focusin",
     (event) => {
-      const target = event.target;
+      const target = event.target as HTMLElement | null;
+      // 浮层自身内部的焦点变化（点击菜单项时 <button> 会获得焦点）不触发关闭——
+      // 否则菜单在 click 派发前就被移除，填充消息永远发不出去。
+      if (target?.closest?.("[data-vwo-overlay-btn], [data-vwo-overlay-menu]") != null) {
+        return;
+      }
       if (isLoginCandidate(target)) {
         showButton(target);
       } else {
