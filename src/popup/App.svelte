@@ -240,7 +240,8 @@
        底部 tab 栏保持在视口底部。 */
     min-height: 0;
     overflow-y: auto;
-    padding: 16px;
+    /* 左右留白收窄到 10px，上下保持 16px */
+    padding: 16px 10px;
   }
 
   .tabs {
