@@ -1,28 +1,18 @@
 <script lang="ts">
   import { KdfType } from "@/core/crypto";
-  import {
-    APPEARANCE_OPTIONS,
-    VAULT_TIMEOUT_OPTIONS,
-    VaultTimeoutAction,
-    type Settings,
-    type VaultTimeout,
-  } from "@/core/state/settings";
-  import type { AppearanceTheme } from "@/core/state/settings";
+  import type { Settings } from "@/core/state/settings";
+  import { validateMasterPassword } from "@/core/vault/vault.service";
   import type { FolderView } from "@/core/vault/models";
-  import {
-    deleteFolder,
-    emptyTrash,
-    newFolderDraft,
-    saveFolder,
-  } from "@/core/vault/vault-repository";
-  import { validateMasterPassword, validatePin } from "@/core/vault/vault.service";
-  import { api, vendor } from "@/platform/browser-api";
   import { sendMessage } from "@/platform/messaging";
   import type { VaultSummary } from "@/platform/messaging/types";
-  import { browserVaultStorage as storage } from "@/platform/storage/browser-vault-storage";
 
-  import CryptoSelfTest from "../components/CryptoSelfTest.svelte";
-  import { openInTab } from "../lib/navigation";
+  import AppearanceSettings from "./settings/AppearanceSettings.svelte";
+  import AutofillSettings from "./settings/AutofillSettings.svelte";
+  import AutoLockSettings from "./settings/AutoLockSettings.svelte";
+  import DataSettings from "./settings/DataSettings.svelte";
+  import FolderSettings from "./settings/FolderSettings.svelte";
+  import PinSettings from "./settings/PinSettings.svelte";
+  import SelfTestSettings from "./settings/SelfTestSettings.svelte";
 
   const {
     summary,
@@ -40,20 +30,12 @@
     onOpenCollect: () => void;
   } = $props();
 
+  /** 当前二级页面；null 表示设置首页。 */
+  let screen = $state<string | null>(null);
+
   let settings = $state<Settings | null>(null);
 
-  /** 折叠组展开状态（默认展开 外观/自动锁定 两个常用项）。 */
-  let openSections = $state(new Set<string>(["appearance", "autolock"]));
-
-  function toggleSection(key: string) {
-    const next = new Set(openSections);
-    if (next.has(key)) {
-      next.delete(key);
-    } else {
-      next.add(key);
-    }
-    openSections = next;
-  }
+  let notice = $state("");
 
   let passwordChangeMode = $state(false);
   let currentPassword = $state("");
@@ -67,26 +49,16 @@
   let clearDataError = $state("");
   let clearDataBusy = $state(false);
 
-  let exportVerifyMode = $state(false);
-  let exportPassword = $state("");
-  let exportError = $state("");
-  let exportBusy = $state(false);
-
-  let pinEnabled = $state(false);
-  let autofillShortcut = $state("");
-  let pinMode = $state<"idle" | "edit" | "remove">("idle");
-  let pinValue = $state("");
-  let pinConfirm = $state("");
-  let pinError = $state("");
-  let pinBusy = $state(false);
-
-  let newFolderName = $state("");
   let confirmingClear = $state(false);
   let destroyPassword = $state("");
   let destroyError = $state("");
   let destroyBusy = $state(false);
-  let notice = $state("");
-  let busy = $state(false);
+
+  $effect(() => {
+    void (async () => {
+      settings = (await sendMessage("settings:get")) ?? null;
+    })();
+  });
 
   const kdfLabel = $derived(
     summary.kdfType === KdfType.Argon2id
@@ -94,89 +66,10 @@
       : `PBKDF2-SHA256 · ${(summary.kdfIterations ?? 0).toLocaleString()} 轮`,
   );
 
-  $effect(() => {
-    void (async () => {
-      settings = (await sendMessage("settings:get")) ?? null;
-      const pinResult = await sendMessage("vault:hasPin");
-      pinEnabled = pinResult?.hasPin === true;
-      const shortcutResult = await sendMessage("shortcut:getAutofill");
-      autofillShortcut = shortcutResult?.shortcut ?? "";
-    })();
-  });
-
-  /** 打开当前浏览器的快捷键管理页（参考 Bitwarden 的引导方式）。 */
-  function openShortcutsPage() {
-    const urls: Record<string, string> = {
-      chrome: "chrome://extensions/shortcuts",
-      edge: "edge://extensions/shortcuts",
-      opera: "opera://extensions/shortcuts",
-      firefox: "about:debugging#/runtime/this-firefox",
-    };
-    void api().tabs.create({ url: urls[vendor()] ?? "chrome://extensions/shortcuts" });
-  }
-
-  async function updateTimeout(event: Event) {
-    const raw = (event.currentTarget as HTMLSelectElement).value;
-    // 数值型超时（分钟）与字符串型触发方式共用一个下拉框，这里还原类型。
-    const value: VaultTimeout = /^\d+$/.test(raw) ? Number(raw) : (raw as VaultTimeout);
-    settings = (await sendMessage("settings:save", { vaultTimeout: value })) ?? settings;
-  }
-
-  async function updateAction(event: Event) {
-    const value = (event.currentTarget as HTMLSelectElement).value as VaultTimeoutAction;
-    settings = (await sendMessage("settings:save", { vaultTimeoutAction: value })) ?? settings;
-  }
-
-  async function addFolder() {
-    const name = newFolderName.trim();
-    if (name === "" || busy) {
-      return;
-    }
-    busy = true;
-    try {
-      await saveFolder(storage, newFolderDraft(name));
-      newFolderName = "";
-      onChanged();
-    } finally {
-      busy = false;
-    }
-  }
-
-  async function removeFolder(folder: FolderView) {
-    busy = true;
-    try {
-      const orphaned = await deleteFolder(storage, folder.id);
-      notice =
-        orphaned > 0
-          ? `已删除文件夹「${folder.name}」，其中 ${orphaned} 个条目已移至「无文件夹」`
-          : `已删除文件夹「${folder.name}」`;
-      onChanged();
-    } finally {
-      busy = false;
-    }
-  }
-
-  async function clearTrash() {
-    busy = true;
-    try {
-      const removed = await emptyTrash(storage);
-      notice = removed > 0 ? `已永久删除 ${removed} 个条目` : "回收站本来就是空的";
-      onChanged();
-    } finally {
-      busy = false;
-    }
-  }
-
-  async function lockNow() {
-    await sendMessage("vault:lock");
-    onChanged();
-  }
-
-  const pinInvalid = $derived(validatePin(pinValue));
-  const pinMismatch = $derived(pinConfirm.length > 0 && pinValue !== pinConfirm);
-
   const newPasswordError = $derived(validateMasterPassword(newPassword));
-  const newPasswordMismatch = $derived(newPasswordConfirm.length > 0 && newPassword !== newPasswordConfirm);
+  const newPasswordMismatch = $derived(
+    newPasswordConfirm.length > 0 && newPassword !== newPasswordConfirm,
+  );
 
   async function submitPasswordChange() {
     if (passwordChangeBusy || newPasswordError != null || newPasswordMismatch) {
@@ -203,6 +96,11 @@
     }
   }
 
+  async function lockNow() {
+    await sendMessage("vault:lock");
+    onChanged();
+  }
+
   async function verifyAndClearData() {
     if (clearDataPassword === "" || clearDataBusy) {
       return;
@@ -217,7 +115,6 @@
         clearDataError = "主密码不正确";
         return;
       }
-
       await sendMessage("vault:clearData");
       clearDataMode = false;
       clearDataPassword = "";
@@ -228,71 +125,6 @@
     }
   }
 
-  async function verifyAndOpenExport() {
-    if (exportPassword === "" || exportBusy) {
-      return;
-    }
-    exportBusy = true;
-    exportError = "";
-    try {
-      // 导出文件包含全部密码，先验证主密码——防「密码库已解锁、人却离开了座位」。
-      const verification = await sendMessage("vault:verifyPassword", {
-        masterPassword: exportPassword,
-      });
-
-      if (verification?.valid !== true) {
-        exportError = "主密码不正确";
-        return;
-      }
-
-      openInTab("export");
-      exportVerifyMode = false;
-      exportPassword = "";
-    } finally {
-      exportBusy = false;
-    }
-  }
-
-  async function savePin() {
-    if (pinError !== "" || pinBusy) {
-      return;
-    }
-    if (pinInvalid != null || pinMismatch) {
-      return;
-    }
-    pinBusy = true;
-    pinError = "";
-    try {
-      const result = await sendMessage("vault:setPin", { pin: pinValue });
-      if (result?.ok === true) {
-        pinEnabled = true;
-        pinMode = "idle";
-        pinValue = "";
-        pinConfirm = "";
-      } else {
-        pinError = result?.message ?? "设置失败";
-      }
-    } finally {
-      pinBusy = false;
-    }
-  }
-
-  async function removePin() {
-    pinBusy = true;
-    pinError = "";
-    try {
-      const result = await sendMessage("vault:clearPin");
-      if (result?.ok === true) {
-        pinEnabled = false;
-        pinMode = "idle";
-      } else {
-        pinError = result?.message ?? "移除失败";
-      }
-    } finally {
-      pinBusy = false;
-    }
-  }
-
   async function destroyVault() {
     if (destroyPassword === "" || destroyBusy) {
       return;
@@ -300,16 +132,13 @@
     destroyBusy = true;
     destroyError = "";
     try {
-      // 销毁是不可逆操作，先验证主密码（防的是「密码库已解锁、人却离开了座位」）。
       const verification = await sendMessage("vault:verifyPassword", {
         masterPassword: destroyPassword,
       });
-
       if (verification?.valid !== true) {
         destroyError = "主密码不正确";
         return;
       }
-
       await sendMessage("vault:clear");
       confirmingClear = false;
       destroyPassword = "";
@@ -318,467 +147,226 @@
       destroyBusy = false;
     }
   }
+
+  /** 设置首页的二级菜单项。 */
+  const MENU_ITEMS = [
+    { key: "appearance", title: "外观", desc: "跟随系统 / 浅色 / 深色" },
+    { key: "autolock", title: "自动锁定", desc: "锁定时机与超时动作" },
+    { key: "autofill", title: "自动填充", desc: "字段检测与快捷键" },
+    { key: "pin", title: "解锁方式", desc: "PIN 快捷解锁" },
+    { key: "folders", title: "文件夹", desc: "管理条目分类" },
+    { key: "data", title: "数据", desc: "导入 / 导出 / 回收站" },
+    { key: "selftest", title: "加密自检", desc: "验证加密原语正确性" },
+  ] as const;
 </script>
 
-<div class="settings">
-  {#if notice !== ""}
-    <p class="notice">{notice}</p>
+{#if screen === "appearance"}
+  {#if settings != null}
+    <AppearanceSettings
+      {settings}
+      onSaved={(next) => (settings = next)}
+      onBack={() => (screen = null)}
+    />
   {/if}
-
-  <section class="panel">
-    <h2>密码库</h2>
-    <dl>
-      <dt>条目</dt>
-      <dd>{cipherCount}</dd>
-      <dt>文件夹</dt>
-      <dd>{folders.length}</dd>
-      <dt>密钥派生</dt>
-      <dd>{kdfLabel}</dd>
-      <dt>解密耗时</dt>
-      <dd>{loadMs.toFixed(0)} ms</dd>
-      <dt>创建于</dt>
-      <dd>{summary.createdAt == null ? "—" : new Date(summary.createdAt).toLocaleDateString()}</dd>
-    </dl>
-  </section>
-
-  <section class="panel collapsible">
-    <button class="collapse-head" onclick={() => toggleSection("appearance")} aria-expanded={openSections.has("appearance")}>
-      <h2>外观</h2>
-      <span class="arrow">{openSections.has("appearance") ? "▾" : "▸"}</span>
-    </button>
-    {#if openSections.has("appearance")}
-      <div class="collapse-body">
-
-    {#if settings == null}
-      <p class="hint">读取中…</p>
-    {:else}
-      <div class="field">
-        <label for="theme">主题</label>
-        <select
-          id="theme"
-          value={settings.theme}
-          onchange={async (e) => {
-            const value = (e.currentTarget as HTMLSelectElement).value as AppearanceTheme;
-            settings = (await sendMessage("settings:save", { theme: value })) ?? settings;
-            // 立即应用新主题（无需刷新）。
-            const root = document.documentElement;
-            if (value === "light" || value === "dark") {
-              root.dataset.theme = value;
-            } else {
-              delete root.dataset.theme;
-            }
-          }}
-        >
-          {#each APPEARANCE_OPTIONS as option (option.value)}
-            <option value={option.value}>{option.label}</option>
-          {/each}
-        </select>
-        <p class="hint">深色与浅色均与 Bitwarden popup 配色一致。</p>
-      </div>
+{:else if screen === "autolock"}
+  {#if settings != null}
+    <AutoLockSettings
+      {settings}
+      onSaved={(next) => (settings = next)}
+      onBack={() => (screen = null)}
+    />
+  {/if}
+{:else if screen === "autofill"}
+  <AutofillSettings onOpenCollect={onOpenCollect} onBack={() => (screen = null)} />
+{:else if screen === "pin"}
+  <PinSettings onBack={() => (screen = null)} />
+{:else if screen === "folders"}
+  <FolderSettings {folders} onChanged={onChanged} onBack={() => (screen = null)} />
+{:else if screen === "data"}
+  <DataSettings onChanged={onChanged} onBack={() => (screen = null)} />
+{:else if screen === "selftest"}
+  <SelfTestSettings onBack={() => (screen = null)} />
+{:else}
+  <div class="settings">
+    {#if notice !== ""}
+      <p class="notice">{notice}</p>
     {/if}
-  
-      </div>
-    {/if}
-</section>
 
-  <section class="panel collapsible">
-    <button class="collapse-head" onclick={() => toggleSection("autolock")} aria-expanded={openSections.has("autolock")}>
-      <h2>自动锁定</h2>
-      <span class="arrow">{openSections.has("autolock") ? "▾" : "▸"}</span>
-    </button>
-    {#if openSections.has("autolock")}
-      <div class="collapse-body">
+    <section class="panel">
+      <h2>密码库</h2>
+      <dl>
+        <dt>条目</dt>
+        <dd>{cipherCount}</dd>
+        <dt>文件夹</dt>
+        <dd>{folders.length}</dd>
+        <dt>密钥派生</dt>
+        <dd>{kdfLabel}</dd>
+        <dt>解密耗时</dt>
+        <dd>{loadMs.toFixed(0)} ms</dd>
+        <dt>创建于</dt>
+        <dd>{summary.createdAt == null ? "—" : new Date(summary.createdAt).toLocaleDateString()}</dd>
+      </dl>
+    </section>
 
-    {#if settings == null}
-      <p class="hint">读取中…</p>
-    {:else}
-      <div class="field">
-        <label for="timeout">锁定时机</label>
-        <select id="timeout" value={String(settings.vaultTimeout)} onchange={updateTimeout}>
-          {#each VAULT_TIMEOUT_OPTIONS as option (option.value)}
-            <option value={String(option.value)}>{option.label}</option>
-          {/each}
-        </select>
-      </div>
-
-      <div class="field">
-        <label for="action">超时后</label>
-        <select id="action" value={settings.vaultTimeoutAction} onchange={updateAction}>
-          <option value={VaultTimeoutAction.Lock}>锁定（保留数据）</option>
-          <option value={VaultTimeoutAction.Clear}>清空（销毁本地数据）</option>
-        </select>
-        {#if settings.vaultTimeoutAction === VaultTimeoutAction.Clear}
-          <p class="hint warn">超时会永久删除本地密码库。请确认你已有导出备份。</p>
-        {/if}
-      </div>
-    {/if}
-  
-      </div>
-    {/if}
-</section>
-
-  <section class="panel collapsible">
-    <button class="collapse-head" onclick={() => toggleSection("autofill")} aria-expanded={openSections.has("autofill")}>
-      <h2>自动填充</h2>
-      <span class="arrow">{openSections.has("autofill") ? "▾" : "▸"}</span>
-    </button>
-    {#if openSections.has("autofill")}
-      <div class="collapse-body">
-
-    <button class="btn btn-secondary" onclick={onOpenCollect}>检测当前页面字段</button>
-    <p class="hint">在打开的站点页面上识别登录表单与字段结构。</p>
-
-    <button class="shortcut-row" onclick={openShortcutsPage}>
-      <span>
-        <span class="shortcut-label">自动填充快捷键</span>
-        <span class="shortcut-value">
-          {autofillShortcut !== "" ? autofillShortcut : "未设置，点击配置"}
-        </span>
-      </span>
-      <span class="shortcut-open">↗</span>
-    </button>
-    <p class="hint">
-      若快捷键被其他扩展占用，Chrome 可能不会分配——点击上方前往快捷键管理页手动设置。
-    </p>
-  
-      </div>
-    {/if}
-</section>
-
-  <section class="panel collapsible">
-    <button class="collapse-head" onclick={() => toggleSection("pin")} aria-expanded={openSections.has("pin")}>
-      <h2>解锁方式</h2>
-      <span class="arrow">{openSections.has("pin") ? "▾" : "▸"}</span>
-    </button>
-    {#if openSections.has("pin")}
-      <div class="collapse-body">
-
-    {#if pinMode === "idle"}
-      <p class="pin-status">
-        PIN 解锁：{pinEnabled ? "已启用" : "未设置"}
-      </p>
-      <p class="hint">
-        PIN 是主密码的快捷解锁方式（4-12 位数字或字母）。数据加密强度不变，
-        但浏览器端无系统设备锁保护，PIN 熵低属于便利换风险，请自行权衡。
-      </p>
-      <div class="row">
-        <button class="btn btn-secondary" onclick={() => (pinMode = "edit")}>
-          {pinEnabled ? "修改 PIN" : "设置 PIN"}
+    <section class="panel menu">
+      {#each MENU_ITEMS as item (item.key)}
+        <button class="menu-row" onclick={() => (screen = item.key)}>
+          <span class="menu-text">
+            <span class="menu-title">{item.title}</span>
+            <span class="menu-desc">{item.desc}</span>
+          </span>
+          <span class="menu-arrow">›</span>
         </button>
-        {#if pinEnabled}
-          <button class="btn btn-secondary" onclick={() => (pinMode = "remove")}>移除 PIN</button>
+      {/each}
+    </section>
+
+    <section class="panel danger">
+      <h2>危险区</h2>
+
+      {#if passwordChangeMode}
+        <div class="field">
+          <label for="cur-pw">当前主密码</label>
+          <input id="cur-pw" type="password" bind:value={currentPassword} autocomplete="current-password" />
+        </div>
+        <div class="field">
+          <label for="new-pw">新主密码</label>
+          <input id="new-pw" type="password" bind:value={newPassword} autocomplete="new-password" />
+          {#if newPassword.length > 0 && newPasswordError != null}
+            <p class="hint invalid">{newPasswordError}</p>
+          {/if}
+        </div>
+        <div class="field">
+          <label for="new-pw2">确认新主密码</label>
+          <input
+            id="new-pw2"
+            type="password"
+            bind:value={newPasswordConfirm}
+            autocomplete="new-password"
+          />
+          {#if newPasswordMismatch}
+            <p class="hint invalid">两次输入不一致</p>
+          {/if}
+        </div>
+        {#if passwordChangeError !== ""}
+          <p class="alert">{passwordChangeError}</p>
         {/if}
-      </div>
-    {:else if pinMode === "edit"}
-      <div class="field">
-        <label for="pin-new">PIN</label>
-        <input
-          id="pin-new"
-          type="password"
-          bind:value={pinValue}
-          autocomplete="new-password"
-        />
-        {#if pinValue.length > 0 && pinInvalid != null}
-          <p class="hint invalid">{pinInvalid}</p>
-        {/if}
-      </div>
-      <div class="field">
-        <label for="pin-confirm">确认 PIN</label>
-        <input
-          id="pin-confirm"
-          type="password"
-          bind:value={pinConfirm}
-          autocomplete="new-password"
-        />
-        {#if pinMismatch}
-          <p class="hint invalid">两次输入不一致</p>
-        {/if}
-      </div>
-      {#if pinError !== ""}
-        <p class="alert">{pinError}</p>
+        <div class="row">
+          <button
+            class="btn btn-secondary"
+            onclick={() => {
+              passwordChangeMode = false;
+              currentPassword = "";
+              newPassword = "";
+              newPasswordConfirm = "";
+              passwordChangeError = "";
+            }}
+          >
+            取消
+          </button>
+          <button
+            class="btn"
+            onclick={() => void submitPasswordChange()}
+            disabled={passwordChangeBusy || currentPassword === "" || newPasswordError != null || newPasswordMismatch}
+          >
+            {passwordChangeBusy ? "修改中…" : "确认修改"}
+          </button>
+        </div>
+      {:else}
+        <button class="btn btn-secondary" onclick={() => (passwordChangeMode = true)}>
+          修改主密码
+        </button>
       {/if}
-      <div class="row">
-        <button
-          class="btn btn-secondary"
-          onclick={() => {
-            pinMode = "idle";
-            pinValue = "";
-            pinConfirm = "";
-            pinError = "";
-          }}
-        >
-          取消
-        </button>
-        <button
-          class="btn"
-          onclick={() => void savePin()}
-          disabled={pinBusy || pinInvalid != null || pinMismatch || pinValue === ""}
-        >
-          {pinBusy ? "保存中…" : "保存"}
-        </button>
-      </div>
-    {:else}
-      <p class="alert">移除 PIN 后将只能使用主密码解锁。确定移除？</p>
-      <div class="row">
-        <button class="btn btn-secondary" onclick={() => (pinMode = "idle")}>取消</button>
-        <button class="btn btn-danger" onclick={() => void removePin()} disabled={pinBusy}>
-          {pinBusy ? "移除中…" : "确认移除"}
-        </button>
-      </div>
-    {/if}
-  
-      </div>
-    {/if}
-</section>
 
-  <section class="panel collapsible">
-    <button class="collapse-head" onclick={() => toggleSection("folders")} aria-expanded={openSections.has("folders")}>
-      <h2>文件夹</h2>
-      <span class="arrow">{openSections.has("folders") ? "▾" : "▸"}</span>
-    </button>
-    {#if openSections.has("folders")}
-      <div class="collapse-body">
+      <button class="btn btn-secondary" onclick={lockNow}>立即锁定</button>
 
-    {#if folders.length === 0}
-      <p class="hint">还没有文件夹。</p>
-    {:else}
-      <ul class="folders">
-        {#each folders as folder (folder.id)}
-          <li>
-            <span>{folder.name}</span>
-            <button onclick={() => removeFolder(folder)} disabled={busy} aria-label="删除文件夹">
-              ×
-            </button>
-          </li>
-        {/each}
-      </ul>
-      <p class="hint">删除文件夹不会删除其中的条目，它们会回到「无文件夹」。</p>
-    {/if}
-    <div class="add-folder">
-      <input type="text" placeholder="新文件夹名称" bind:value={newFolderName} />
-      <button class="btn btn-secondary" onclick={addFolder} disabled={busy}>添加</button>
-    </div>
-  
-      </div>
-    {/if}
-</section>
-
-  <section class="panel collapsible">
-    <button class="collapse-head" onclick={() => toggleSection("data")} aria-expanded={openSections.has("data")}>
-      <h2>数据</h2>
-      <span class="arrow">{openSections.has("data") ? "▾" : "▸"}</span>
-    </button>
-    {#if openSections.has("data")}
-      <div class="collapse-body">
-
-    {#if exportVerifyMode}
-      <div class="field">
-        <label for="export-pw">验证主密码</label>
-        <input
-          id="export-pw"
-          type="password"
-          bind:value={exportPassword}
-          autocomplete="current-password"
-          onkeydown={(e) => {
-            if (e.key === "Enter") {
-              void verifyAndOpenExport();
-            }
-          }}
-        />
-      </div>
-      {#if exportError !== ""}
-        <p class="alert">{exportError}</p>
-      {/if}
-      <div class="row">
-        <button
-          class="btn btn-secondary"
-          onclick={() => {
-            exportVerifyMode = false;
-            exportPassword = "";
-            exportError = "";
-          }}
-        >
-          取消
-        </button>
-        <button
-          class="btn"
-          onclick={() => void verifyAndOpenExport()}
-          disabled={exportBusy || exportPassword === ""}
-        >
-          {exportBusy ? "验证中…" : "验证并导出"}
-        </button>
-      </div>
-    {:else}
-      <div class="row">
-        <button class="btn btn-secondary" onclick={() => openInTab("import")}>导入</button>
-        <button class="btn btn-secondary" onclick={() => (exportVerifyMode = true)}>导出</button>
-      </div>
-    {/if}
-    <button class="btn btn-secondary" onclick={clearTrash} disabled={busy}>清空回收站</button>
-  
-      </div>
-    {/if}
-</section>
-
-  <section class="panel collapsible">
-    <button class="collapse-head" onclick={() => toggleSection("selftest")} aria-expanded={openSections.has("selftest")}>
-      <h2>加密自检</h2>
-      <span class="arrow">{openSections.has("selftest") ? "▾" : "▸"}</span>
-    </button>
-    {#if openSections.has("selftest")}
-      <div class="collapse-body">
-        <CryptoSelfTest />
-      </div>
-    {/if}
-  </section>
-
-  <section class="panel danger">
-    <h2>危险区</h2>
-
-    {#if passwordChangeMode}
-      <div class="field">
-        <label for="cur-pw">当前主密码</label>
-        <input
-          id="cur-pw"
-          type="password"
-          bind:value={currentPassword}
-          autocomplete="current-password"
-        />
-      </div>
-      <div class="field">
-        <label for="new-pw">新主密码</label>
-        <input id="new-pw" type="password" bind:value={newPassword} autocomplete="new-password" />
-        {#if newPassword.length > 0 && newPasswordError != null}
-          <p class="hint invalid">{newPasswordError}</p>
+      {#if clearDataMode}
+        <p class="alert">将删除全部条目与文件夹，密码库本身（主密码、PIN）保留。请输入主密码确认。</p>
+        <div class="field">
+          <label for="clear-data-pw">主密码</label>
+          <input
+            id="clear-data-pw"
+            type="password"
+            bind:value={clearDataPassword}
+            autocomplete="current-password"
+            onkeydown={(e) => {
+              if (e.key === "Enter") {
+                void verifyAndClearData();
+              }
+            }}
+          />
+        </div>
+        {#if clearDataError !== ""}
+          <p class="alert">{clearDataError}</p>
         {/if}
-      </div>
-      <div class="field">
-        <label for="new-pw2">确认新主密码</label>
-        <input
-          id="new-pw2"
-          type="password"
-          bind:value={newPasswordConfirm}
-          autocomplete="new-password"
-        />
-        {#if newPasswordMismatch}
-          <p class="hint invalid">两次输入不一致</p>
+        <div class="row">
+          <button
+            class="btn btn-secondary"
+            onclick={() => {
+              clearDataMode = false;
+              clearDataPassword = "";
+              clearDataError = "";
+            }}
+          >
+            取消
+          </button>
+          <button
+            class="btn btn-danger"
+            onclick={() => void verifyAndClearData()}
+            disabled={clearDataBusy || clearDataPassword === ""}
+          >
+            {clearDataBusy ? "验证中…" : "确认清空"}
+          </button>
+        </div>
+      {:else}
+        <button class="btn btn-secondary" onclick={() => (clearDataMode = true)}>清空密码库数据</button>
+      {/if}
+
+      {#if confirmingClear}
+        <p class="alert">销毁后无法恢复。请输入主密码确认操作。</p>
+        <div class="field">
+          <label for="destroy-pw">主密码</label>
+          <input
+            id="destroy-pw"
+            type="password"
+            bind:value={destroyPassword}
+            autocomplete="current-password"
+            onkeydown={(e) => {
+              if (e.key === "Enter") {
+                void destroyVault();
+              }
+            }}
+          />
+        </div>
+        {#if destroyError !== ""}
+          <p class="alert">{destroyError}</p>
         {/if}
-      </div>
-      {#if passwordChangeError !== ""}
-        <p class="alert">{passwordChangeError}</p>
+        <div class="row">
+          <button
+            class="btn btn-secondary"
+            onclick={() => {
+              confirmingClear = false;
+              destroyPassword = "";
+              destroyError = "";
+            }}
+          >
+            取消
+          </button>
+          <button
+            class="btn btn-danger"
+            onclick={() => void destroyVault()}
+            disabled={destroyBusy || destroyPassword === ""}
+          >
+            {destroyBusy ? "验证中…" : "确认销毁"}
+          </button>
+        </div>
+      {:else}
+        <button class="btn btn-danger" onclick={() => (confirmingClear = true)}>
+          销毁本地密码库
+        </button>
       {/if}
-      <div class="row">
-        <button
-          class="btn btn-secondary"
-          onclick={() => {
-            passwordChangeMode = false;
-            currentPassword = "";
-            newPassword = "";
-            newPasswordConfirm = "";
-            passwordChangeError = "";
-          }}
-        >
-          取消
-        </button>
-        <button
-          class="btn"
-          onclick={() => void submitPasswordChange()}
-          disabled={passwordChangeBusy || currentPassword === "" || newPasswordError != null || newPasswordMismatch}
-        >
-          {passwordChangeBusy ? "修改中…" : "确认修改"}
-        </button>
-      </div>
-    {:else}
-      <button class="btn btn-secondary" onclick={() => (passwordChangeMode = true)}>
-        修改主密码
-      </button>
-    {/if}
-
-    <button class="btn btn-secondary" onclick={lockNow}>立即锁定</button>
-
-    {#if clearDataMode}
-      <p class="alert">将删除全部条目与文件夹，密码库本身（主密码、PIN）保留。请输入主密码确认。</p>
-      <div class="field">
-        <label for="clear-data-pw">主密码</label>
-        <input
-          id="clear-data-pw"
-          type="password"
-          bind:value={clearDataPassword}
-          autocomplete="current-password"
-          onkeydown={(e) => {
-            if (e.key === "Enter") {
-              void verifyAndClearData();
-            }
-          }}
-        />
-      </div>
-      {#if clearDataError !== ""}
-        <p class="alert">{clearDataError}</p>
-      {/if}
-      <div class="row">
-        <button
-          class="btn btn-secondary"
-          onclick={() => {
-            clearDataMode = false;
-            clearDataPassword = "";
-            clearDataError = "";
-          }}
-        >
-          取消
-        </button>
-        <button
-          class="btn btn-danger"
-          onclick={() => void verifyAndClearData()}
-          disabled={clearDataBusy || clearDataPassword === ""}
-        >
-          {clearDataBusy ? "验证中…" : "确认清空"}
-        </button>
-      </div>
-    {:else}
-      <button class="btn btn-secondary" onclick={() => (clearDataMode = true)}>清空密码库数据</button>
-    {/if}
-
-    {#if confirmingClear}
-      <p class="alert">销毁后无法恢复。请输入主密码确认操作。</p>
-      <div class="field">
-        <label for="destroy-pw">主密码</label>
-        <input
-          id="destroy-pw"
-          type="password"
-          bind:value={destroyPassword}
-          autocomplete="current-password"
-          onkeydown={(e) => {
-            if (e.key === "Enter") {
-              void destroyVault();
-            }
-          }}
-        />
-      </div>
-      {#if destroyError !== ""}
-        <p class="alert">{destroyError}</p>
-      {/if}
-      <div class="row">
-        <button
-          class="btn btn-secondary"
-          onclick={() => {
-            confirmingClear = false;
-            destroyPassword = "";
-            destroyError = "";
-          }}
-        >
-          取消
-        </button>
-        <button class="btn btn-danger" onclick={() => void destroyVault()} disabled={destroyBusy || destroyPassword === ""}>
-          {destroyBusy ? "验证中…" : "确认销毁"}
-        </button>
-      </div>
-    {:else}
-      <button class="btn btn-danger" onclick={() => (confirmingClear = true)}>
-        销毁本地密码库
-      </button>
-    {/if}
-  </section>
-</div>
+    </section>
+  </div>
+{/if}
 
 <style>
   .settings {
@@ -796,46 +384,12 @@
   }
 
   h2 {
-    margin: 0;
+    margin: 0 0 8px;
     font-size: 12px;
     font-weight: 600;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.04em;
-  }
-
-  .collapsible {
-    padding: 0;
-    overflow: hidden;
-  }
-
-  .collapse-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    padding: 12px;
-    border: none;
-    background: transparent;
-    color: var(--text);
-    cursor: pointer;
-    font-family: inherit;
-  }
-
-  .collapse-head:hover h2 {
-    color: var(--accent);
-  }
-
-  .arrow {
-    color: var(--text-muted);
-    font-size: 11px;
-  }
-
-  .collapse-body {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 0 12px 12px;
   }
 
   .panel {
@@ -846,6 +400,56 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+  }
+
+  /* 二级菜单：每项一行，点击进入子页面 */
+  .panel.menu {
+    padding: 4px;
+  }
+
+  .menu-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 8px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .menu-row:hover {
+    background: var(--bg-subtle);
+  }
+
+  .menu-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .menu-title {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .menu-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .menu-arrow {
+    color: var(--text-muted);
+    font-size: 15px;
+    flex: none;
   }
 
   dl {
@@ -865,100 +469,13 @@
     text-align: right;
   }
 
-  .folders {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-  }
-
-  .folders li {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 12px;
-  }
-
-  .folders button {
-    border: none;
-    background: transparent;
-    color: var(--text-muted);
-    cursor: pointer;
-    font-size: 15px;
-    line-height: 1;
-    padding: 0 4px;
-  }
-
-  .folders button:hover {
-    color: var(--danger);
-  }
-
-  .add-folder {
-    display: flex;
-    gap: 6px;
-  }
-
-  .add-folder .btn {
-    width: auto;
-    flex: none;
-  }
-
   .row {
     display: flex;
     gap: 8px;
   }
 
-  .warn {
-    color: var(--danger);
-  }
-
   .invalid {
     color: var(--danger);
-  }
-
-  .shortcut-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    padding: 8px 10px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--bg-subtle);
-    color: var(--text);
-    font-family: inherit;
-    text-align: left;
-    cursor: pointer;
-  }
-
-  .shortcut-row:hover {
-    border-color: var(--accent);
-  }
-
-  .shortcut-label {
-    display: block;
-    font-size: 12px;
-    font-weight: 600;
-  }
-
-  .shortcut-value {
-    display: block;
-    font-size: 11px;
-    color: var(--text-muted);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .shortcut-open {
-    color: var(--text-muted);
-    font-size: 13px;
-  }
-
-  .pin-status {
-    margin: 0;
-    font-size: 12px;
-    font-weight: 600;
   }
 
   .panel.danger {
