@@ -145,6 +145,10 @@ export interface MessageContracts {
     request: { url: string };
     response: { items: OverlayMatch[] };
   };
+  "shortcut:getAutofill": {
+    request: undefined;
+    response: { shortcut: string };
+  };
 }
 
 /** 内联菜单浮层展示的条目摘要（不含密码）。 */

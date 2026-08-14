@@ -302,6 +302,16 @@ registerHandlers({
   "attachment:get": async ({ attachmentId }) =>
     await getAttachmentBytes(vaultStorage, attachmentId),
 
+  "shortcut:getAutofill": async () => {
+    try {
+      const commands = await api().commands.getAll();
+      const autofill = commands.find((command) => command.name === "autofill_login");
+      return { shortcut: autofill?.shortcut ?? "" };
+    } catch {
+      return { shortcut: "" };
+    }
+  },
+
   "overlay:getMatches": async ({ url }) => {
     if ((await getStatus(vaultStorage)) !== VaultStatus.Unlocked) {
       return { items: [] };
