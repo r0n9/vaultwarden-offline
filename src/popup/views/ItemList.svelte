@@ -49,6 +49,8 @@
   let query = $state("");
   /** 当前展开「更多」菜单的条目 id。 */
   let moreMenuFor = $state<string | null>(null);
+  /** 当前展开「复制」菜单的条目 id。 */
+  let copyMenuFor = $state<string | null>(null);
   /** 复制成功提示的条目 id。 */
   let copiedId = $state<string | null>(null);
   let actionBusy = $state(false);
@@ -58,9 +60,10 @@
     return cipher.login?.uris?.find((entry) => entry.uri != null && /^https?:/i.test(entry.uri))?.uri;
   }
 
-  async function copyPassword(cipher: CipherView) {
-    const value = cipher.login?.password || cipher.login?.username || "";
-    if (value === "") {
+  async function copyValue(cipher: CipherView, which: "username" | "password") {
+    copyMenuFor = null;
+    const value = which === "password" ? cipher.login?.password : cipher.login?.username;
+    if (value == null || value === "") {
       return;
     }
     try {
@@ -208,14 +211,22 @@
               </svg>
             </a>
           {/if}
-          <button
-            class="action"
-            onclick={() => void copyPassword(cipher)}
-            title="复制密码（无密码则复制用户名）"
-            aria-label="复制密码"
-          >
-            {copiedId === cipher.id ? "✓" : "⧉"}
-          </button>
+          <div class="more-wrap">
+            <button
+              class="action"
+              onclick={() => (copyMenuFor = copyMenuFor === cipher.id ? null : cipher.id)}
+              title="复制"
+              aria-label="复制"
+            >
+              {copiedId === cipher.id ? "✓" : "⧉"}
+            </button>
+            {#if copyMenuFor === cipher.id}
+              <div class="more-menu">
+                <button onclick={() => void copyValue(cipher, "username")}>复制用户名</button>
+                <button onclick={() => void copyValue(cipher, "password")}>复制密码</button>
+              </div>
+            {/if}
+          </div>
           <div class="more-wrap">
             <button
               class="action"
@@ -243,7 +254,19 @@
   </ul>
 {/snippet}
 
-<div class="list-view">
+<!-- svelte-ignore a11y_no_static_element_interactions：列表容器的 mousedown 仅用于
+     关闭行内弹出菜单，元素本身不可交互、无可聚焦子内容，加 role 反而误导读屏 -->
+<div
+  class="list-view"
+  onmousedown={(e) => {
+    const target = e.target as HTMLElement | null;
+    const inside = target?.closest?.(".more-menu, .action") != null;
+    if (!inside) {
+      moreMenuFor = null;
+      copyMenuFor = null;
+    }
+  }}
+>
   <div class="top-row">
     <div class="search-wrap">
       <input
