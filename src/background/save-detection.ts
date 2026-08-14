@@ -3,7 +3,7 @@ import { VaultStatus } from "@/core/state/vault-status";
 import { decryptCipher } from "@/core/vault/cipher-encryption";
 import { CipherType } from "@/core/vault/enums";
 import type { CipherView } from "@/core/vault/models";
-import { cipherMatchesUrl } from "@/core/vault/uri-matching";
+import { cipherMatchesUrl, hostWithPort } from "@/core/vault/uri-matching";
 import { getCipher, saveCipher } from "@/core/vault/vault-repository";
 import { getStatus, readVaultData, requireUserKey } from "@/core/vault/vault.service";
 import type { SaveDetectionResult, SaveCommitRequest, SaveCommitResult } from "@/platform/messaging/types";
@@ -102,10 +102,10 @@ export async function commitSave(
   }
 }
 
-/** 条目名称用站点域名，去掉 www 前缀。 */
+/** 条目名称用站点主机名（含端口，如 192.168.2.4:3000），去掉 www 前缀。 */
 function safeHostname(url: string): string {
   try {
-    return new URL(url).hostname.replace(/^www\./, "");
+    return hostWithPort(url)?.replace(/^www\./, "") ?? "未命名站点";
   } catch {
     return "未命名站点";
   }

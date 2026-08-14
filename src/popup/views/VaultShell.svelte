@@ -1,7 +1,7 @@
 <script lang="ts">
   import { CipherType } from "@/core/vault/enums";
   import type { CipherView, FolderView } from "@/core/vault/models";
-  import { extractHostname } from "@/core/vault/uri-matching";
+  import { hostWithPort } from "@/core/vault/uri-matching";
   import {
     loadVault,
     newCipherDraft,
@@ -127,9 +127,10 @@
       // 新增条目：名称自动填当前站点域名，登录条目自动带上当前网址。
       const draft = newCipherDraft(type);
       if (activeUrl != null && /^https?:/i.test(activeUrl)) {
-        const hostname = extractHostname(activeUrl)?.replace(/^www\./, "");
-        if (hostname != null) {
-          draft.name = hostname;
+        // 名称 = 主机名 + 端口（如有）：192.168.2.4:3000、gitea.880508.xyz:3000。
+        const host = hostWithPort(activeUrl)?.replace(/^www\./, "");
+        if (host != null) {
+          draft.name = host;
         }
         if (type === CipherType.Login) {
           draft.login = { uris: [{ uri: activeUrl }] };

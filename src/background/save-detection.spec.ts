@@ -110,6 +110,32 @@ describe("commitSave", () => {
     expect(saved.login?.uris).toEqual([{ uri: "https://example.com/login" }]);
   });
 
+  it("名称带端口（如有）", async () => {
+    await commitSave(storage, {
+      mode: "save",
+      url: "http://192.168.2.4:3000/login",
+      username: "a",
+      password: "p",
+    });
+    await commitSave(storage, {
+      mode: "save",
+      url: "https://gitea.880508.xyz:8443/",
+      username: "b",
+      password: "p",
+    });
+    await commitSave(storage, {
+      mode: "save",
+      url: "https://www.example.com:8080/",
+      username: "c",
+      password: "p",
+    });
+
+    const { ciphers } = await loadVault(storage);
+    const names = ciphers.map((c) => c.name).sort();
+
+    expect(names).toEqual(["192.168.2.4:3000", "example.com:8080", "gitea.880508.xyz:8443"]);
+  });
+
   it("去掉 www 前缀", async () => {
     await commitSave(storage, {
       mode: "save",
