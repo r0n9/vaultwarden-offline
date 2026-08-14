@@ -10,6 +10,10 @@ your data is never locked into this extension.
 
 ---
 
+<img src="vaultwarden-offline.png" alt="Vaultwarden Offline preview" width="100%">
+
+---
+
 ## Features
 
 - **Fully offline** — no accounts, no sync, no telemetry; data lives only on your device
