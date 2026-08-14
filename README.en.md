@@ -208,6 +208,20 @@ the encryption strength of the data is unchanged.
 
 ---
 
+## Support the Project
+
+If this project helps you, feel free to buy me a coffee ☕
+
+| WeChat | Alipay |
+|---|---|
+| ![WeChat](public/sponsor/wechat.png) | ![Alipay](public/sponsor/alipay.png) |
+
+- **Afdian**: [sponsor page](https://afdian.com) (no personal payment info exposed)
+- Donations are pure gratitude — **no feature privileges**; this project stays
+  free, ad-free, and membership-free forever.
+
+---
+
 ## License
 
 This project is open source under the **GNU GPL-3.0**, see [LICENSE](LICENSE).
