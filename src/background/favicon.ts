@@ -1,4 +1,4 @@
-import { extractHostname } from "@/core/vault/uri-matching";
+import { extractHostname, hostWithPort } from "@/core/vault/uri-matching";
 import { storage, tabs } from "@/platform/browser-api";
 import { logger } from "@/platform/logger";
 
@@ -42,13 +42,16 @@ export async function getCachedFavicon(domain: string): Promise<string | undefin
  * @returns 是否成功取得
  */
 export async function fetchFavicon(url: string, tabId?: number): Promise<boolean> {
+  // 缓存与冷却键用「主机+端口」：192.168.2.4:3000 与 :8080 是不同站点，
+  // 图标不应串用。favicon 服务请求参数仍用纯域名（服务端不关心端口）。
+  const hostKey = hostWithPort(url);
   const domain = extractHostname(url);
-  if (domain == null) {
+  if (hostKey == null || domain == null) {
     return false;
   }
 
   // 冷却期内不再重试（整条链路失败过）。
-  const fail = await storage.local.get<{ failedAt: number }>(`${FAIL_PREFIX}${domain}`);
+  const fail = await storage.local.get<{ failedAt: number }>(`${FAIL_PREFIX}${hostKey}`);
   if (fail != null && Date.now() - fail.failedAt < FAIL_COOLDOWN_MS) {
     return false;
   }
@@ -96,14 +99,14 @@ export async function fetchFavicon(url: string, tabId?: number): Promise<boolean
 
   if (dataUrl != null) {
     const entry: FaviconCacheEntry = { dataUrl, updatedAt: Date.now() };
-    await storage.local.set(`${FAVICON_CACHE_PREFIX}${domain}`, entry);
+    await storage.local.set(`${FAVICON_CACHE_PREFIX}${hostKey}`, entry);
     // 成功即清除失败冷却。
-    await storage.local.remove(`${FAIL_PREFIX}${domain}`);
+    await storage.local.remove(`${FAIL_PREFIX}${hostKey}`);
     return true;
   }
 
   // 整条链路失败：记冷却，避免反复打不可达的网络。
-  await storage.local.set(`${FAIL_PREFIX}${domain}`, { failedAt: Date.now() });
+  await storage.local.set(`${FAIL_PREFIX}${hostKey}`, { failedAt: Date.now() });
   return false;
 }
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { extractHostname } from "@/core/vault/uri-matching";
+  import { hostWithPort } from "@/core/vault/uri-matching";
   import type { CipherView } from "@/core/vault/models";
   import { storage } from "@/platform/browser-api";
 
@@ -15,12 +15,12 @@
     if (firstUri == null) {
       return;
     }
-    const domain = extractHostname(firstUri);
-    if (domain == null) {
+    const hostKey = hostWithPort(firstUri);
+    if (hostKey == null) {
       return;
     }
     void storage.local
-      .get<{ dataUrl?: string }>(`vwo:favicons:${domain}`)
+      .get<{ dataUrl?: string }>(`vwo:favicons:${hostKey}`)
       .then((entry) => {
         favicon = entry?.dataUrl;
       });
