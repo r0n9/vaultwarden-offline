@@ -43,6 +43,7 @@ describe("normalizeSettings", () => {
     expect(normalizeSettings({ vaultTimeout: 30, vaultTimeoutAction: "clear" })).toEqual({
       vaultTimeout: 30,
       vaultTimeoutAction: "clear",
+      theme: "system",
     });
   });
 
@@ -61,6 +62,13 @@ describe("normalizeSettings", () => {
     expect(normalizeSettings({ vaultTimeout: "forever" }).vaultTimeout).toBe(
       DEFAULT_SETTINGS.vaultTimeout,
     );
+  });
+
+  it("外观默认跟随系统，非法值回落", () => {
+    expect(normalizeSettings(undefined).theme).toBe("system");
+    expect(normalizeSettings({ theme: "light" }).theme).toBe("light");
+    expect(normalizeSettings({ theme: "dark" }).theme).toBe("dark");
+    expect(normalizeSettings({ theme: "blue" }).theme).toBe("system");
   });
 
   it("剔除非法动作", () => {

@@ -1,13 +1,13 @@
 :root {
-  /* 内容区背景：浅灰（对齐 Bitwarden——标题栏/tab 用白 surface，内容区用浅灰形成层次） */
-  --bg: #f7f8fa;
-  --bg-subtle: #eef0f3;
+  /* Bitwarden 官方 token（tw-theme.css）：内容区 gray-050、主蓝 brand-700 #175ddc */
+  --bg: #f7f9fa;
+  --bg-subtle: #e6ecf2;
   --surface: #ffffff;
-  --border: #e2e8f0;
-  --text: #0f172a;
-  --text-muted: #64748b;
-  --accent: #1d4ed8;
-  --accent-hover: #1e40af;
+  --border: #d5dde8;
+  --text: #1d293d;
+  --text-muted: #8496b0;
+  --accent: #175ddc;
+  --accent-hover: #2a70f4;
   --accent-text: #ffffff;
   --success: #15803d;
   --danger: #dc2626;
@@ -15,21 +15,26 @@
   color-scheme: light dark;
 }
 
+/** 主题：
+ *   - 无 data-theme（或 system）：跟随系统（媒体查询生效）
+ *   - data-theme="light"：媒体查询被 :not() 排除 → 强制浅色（裸 :root 值）
+ *   - data-theme="dark"：命中 :not() → 强制深色 */
 @media (prefers-color-scheme: dark) {
-  :root {
-    /* 暗色对齐 Bitwarden：内容区深灰，surface（标题栏/tab/卡片）稍浅形成层次，
-       与浅色模式同构。 */
-    --bg: #1f242e;
-    --bg-subtle: #333a47;
-    --surface: #2a2f3a;
-    --border: #3f4550;
-    --text: #e5e7eb;
-    --text-muted: #8b929d;
-    --accent: #4c8dff;
-    --accent-hover: #6ba2ff;
+  :root:not([data-theme="light"]) {
+    /* 暗色最终配色（用户指定）：
+       卡片 gray-900 #0f172b、最底层 gray-950 #020618（几乎纯黑），
+       反差拉满；边框/文字沿用 Bitwarden 官方值保证可读性 */
+    --bg: #020618;
+    --bg-subtle: #1d293d;
+    --surface: #0f172b;
+    --border: #4c525f;
+    --text: #f3f6f9;
+    --text-muted: #8898b5;
+    --accent: #6f9df1;
+    --accent-hover: #8ab4f5;
     --accent-text: #ffffff;
-    --success: #4ade80;
-    --danger: #f87171;
+    --success: #52e07c;
+    --danger: #ff8d85;
   }
 }
 

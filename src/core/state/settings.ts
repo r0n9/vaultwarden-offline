@@ -31,14 +31,31 @@ export const VaultTimeoutAction = {
 
 export type VaultTimeoutAction = (typeof VaultTimeoutAction)[keyof typeof VaultTimeoutAction];
 
+/** 外观：跟随系统 / 强制浅色 / 强制深色。 */
+export const AppearanceTheme = {
+  System: "system",
+  Light: "light",
+  Dark: "dark",
+} as const;
+
+export type AppearanceTheme = (typeof AppearanceTheme)[keyof typeof AppearanceTheme];
+
+export const APPEARANCE_OPTIONS: ReadonlyArray<{ value: AppearanceTheme; label: string }> = [
+  { value: AppearanceTheme.System, label: "跟随系统" },
+  { value: AppearanceTheme.Light, label: "浅色" },
+  { value: AppearanceTheme.Dark, label: "深色" },
+];
+
 export interface Settings {
   vaultTimeout: VaultTimeout;
   vaultTimeoutAction: VaultTimeoutAction;
+  theme: AppearanceTheme;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   vaultTimeout: 15,
   vaultTimeoutAction: VaultTimeoutAction.Lock,
+  theme: AppearanceTheme.System,
 };
 
 /** popup 下拉框可选项。 */
@@ -95,6 +112,10 @@ export function normalizeSettings(raw: unknown): Settings {
       action === VaultTimeoutAction.Clear || action === VaultTimeoutAction.Lock
         ? action
         : DEFAULT_SETTINGS.vaultTimeoutAction,
+    theme:
+      candidate.theme === AppearanceTheme.Light || candidate.theme === AppearanceTheme.Dark
+        ? candidate.theme
+        : DEFAULT_SETTINGS.theme,
   };
 }
 

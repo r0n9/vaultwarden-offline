@@ -35,8 +35,22 @@
   // 「检测当前页面字段」在 Settings tab 里，跳转到 Vault tab 的采集屏。
   let collectRequest = $state(0);
 
+  /** 应用外观：system 时移除标记（跟随系统媒体查询），否则强制对应主题。 */
+  function applyTheme(theme: string | undefined): void {
+    const root = document.documentElement;
+    if (theme === "light" || theme === "dark") {
+      root.dataset.theme = theme;
+    } else {
+      delete root.dataset.theme;
+    }
+  }
+
   async function refresh() {
     summary = (await sendMessage("vault:getSummary")) ?? null;
+
+    // 外观设置可能已变化（设置页保存后），随刷新一并应用。
+    const settings = await sendMessage("settings:get");
+    applyTheme(settings?.theme);
   }
 
   $effect(() => {

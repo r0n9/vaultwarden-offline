@@ -1,11 +1,13 @@
 <script lang="ts">
   import { KdfType } from "@/core/crypto";
   import {
+    APPEARANCE_OPTIONS,
     VAULT_TIMEOUT_OPTIONS,
     VaultTimeoutAction,
     type Settings,
     type VaultTimeout,
   } from "@/core/state/settings";
+  import type { AppearanceTheme } from "@/core/state/settings";
   import type { FolderView } from "@/core/vault/models";
   import {
     deleteFolder,
@@ -309,6 +311,37 @@
       <dt>创建于</dt>
       <dd>{summary.createdAt == null ? "—" : new Date(summary.createdAt).toLocaleDateString()}</dd>
     </dl>
+  </section>
+
+  <section class="panel">
+    <h2>外观</h2>
+    {#if settings == null}
+      <p class="hint">读取中…</p>
+    {:else}
+      <div class="field">
+        <label for="theme">主题</label>
+        <select
+          id="theme"
+          value={settings.theme}
+          onchange={async (e) => {
+            const value = (e.currentTarget as HTMLSelectElement).value as AppearanceTheme;
+            settings = (await sendMessage("settings:save", { theme: value })) ?? settings;
+            // 立即应用新主题（无需刷新）。
+            const root = document.documentElement;
+            if (value === "light" || value === "dark") {
+              root.dataset.theme = value;
+            } else {
+              delete root.dataset.theme;
+            }
+          }}
+        >
+          {#each APPEARANCE_OPTIONS as option (option.value)}
+            <option value={option.value}>{option.label}</option>
+          {/each}
+        </select>
+        <p class="hint">深色与浅色均与 Bitwarden popup 配色一致。</p>
+      </div>
+    {/if}
   </section>
 
   <section class="panel">

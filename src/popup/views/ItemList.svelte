@@ -477,24 +477,32 @@
     padding: 0;
     display: flex;
     flex-direction: column;
+    gap: 5px;
   }
 
+  /* Bitwarden 风格条目行：卡片式（surface 底 + 圆角 + 细边框），行间留白 */
   .item {
     display: flex;
     align-items: center;
     gap: 10px;
     width: 100%;
-    padding: 6px 4px;
-    border: none;
-    border-radius: 6px;
-    background: transparent;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
     color: inherit;
     font-family: inherit;
     text-align: left;
     cursor: pointer;
+    transition: border-color 0.12s ease, background-color 0.12s ease;
   }
 
   .item:hover {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+    background: var(--bg-subtle);
+  }
+
+  .item:active {
     background: var(--bg-subtle);
   }
 
