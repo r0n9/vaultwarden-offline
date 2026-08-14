@@ -29,14 +29,18 @@ jobs:
       - name: Verify tests
         run: npm test
 
-      - name: Build
-        run: npm run build
-
-      - name: Package extension
-        # dist/ 即完整扩展目录，压缩为发布资产。
+      - name: Build Chrome / Edge / Opera
+        # MV3 产物相同（同一份 manifest），打包后改名保留 dist 供 Firefox 构建。
         run: |
-          cd dist
-          zip -r ../vaultwarden-offline-${{ github.ref_name }}.zip .
+          npm run build
+          mv dist dist-chrome
+          cd dist-chrome && zip -r ../vaultwarden-offline-${{ github.ref_name }}-chrome.zip .
+
+      - name: Build Firefox
+        # Firefox 用事件页 + gecko 专属设置，manifest 差异在构建期注入。
+        run: |
+          npm run build:firefox
+          cd dist && zip -r ../vaultwarden-offline-${{ github.ref_name }}-firefox.zip .
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
