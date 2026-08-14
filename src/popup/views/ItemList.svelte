@@ -396,11 +396,11 @@
       {/if}
     {:else}
       {#if filteredSiteMatches.length > 0}
-        <h3 class="section">自动填充建议</h3>
+        <h3 class="section">自动填充建议（{filteredSiteMatches.length}）</h3>
         {@render itemList(filteredSiteMatches)}
       {/if}
 
-      <h3 class="section">全部项目</h3>
+      <h3 class="section">全部项目（{allItems.length}）</h3>
       {#if allItems.length === 0}
         <p class="empty">
           {hasFilters ? "没有符合筛选条件的条目。" : "密码库是空的，点右上角「＋ 新增」创建第一条。"}
