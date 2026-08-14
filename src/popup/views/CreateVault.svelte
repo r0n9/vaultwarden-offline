@@ -58,13 +58,17 @@
   </div>
 
   <div class="field">
-    <label for="pw">主密码</label>
+    <label for="pw">主密码 <span class="required" title="必填">*</span></label>
     <input id="pw" type="password" bind:value={password} autocomplete="new-password" />
-    <p class="hint">至少 8 位。建议使用一句只有你知道的长句子。</p>
+    {#if password.length > 0 && password.length < 8}
+      <p class="hint invalid">至少 8 位，当前 {password.length} 位</p>
+    {:else}
+      <p class="hint">至少 8 位。建议使用一句只有你知道的长句子。</p>
+    {/if}
   </div>
 
   <div class="field">
-    <label for="pw2">确认主密码</label>
+    <label for="pw2">确认主密码 <span class="required" title="必填">*</span></label>
     <input id="pw2" type="password" bind:value={confirmation} autocomplete="new-password" />
     {#if mismatch}
       <p class="hint mismatch">两次输入不一致</p>
@@ -106,6 +110,14 @@
   }
 
   .mismatch {
+    color: var(--danger);
+  }
+
+  .required {
+    color: var(--danger);
+  }
+
+  .invalid {
     color: var(--danger);
   }
 

@@ -150,12 +150,16 @@
 
     {#if bootstrap}
       <div class="field">
-        <label for="mpw">设置本地主密码</label>
+        <label for="mpw">设置本地主密码 <span class="required" title="必填">*</span></label>
         <input id="mpw" type="password" bind:value={masterPassword} autocomplete="new-password" />
-        <p class="hint">至少 8 位。它只用于加密本地数据，与导出文件的口令无关，且无法找回。</p>
+        {#if masterPassword.length > 0 && masterPassword.length < 8}
+          <p class="hint invalid">至少 8 位，当前 {masterPassword.length} 位</p>
+        {:else}
+          <p class="hint">至少 8 位。它只用于加密本地数据，与导出文件的口令无关，且无法找回。</p>
+        {/if}
       </div>
       <div class="field">
-        <label for="mpw2">确认主密码</label>
+        <label for="mpw2">确认主密码 <span class="required" title="必填">*</span></label>
         <input id="mpw2" type="password" bind:value={masterConfirm} autocomplete="new-password" />
         {#if masterConfirm !== "" && masterPassword !== masterConfirm}
           <p class="hint danger">两次输入不一致</p>
@@ -217,6 +221,14 @@
   }
 
   .danger {
+    color: var(--danger);
+  }
+
+  .required {
+    color: var(--danger);
+  }
+
+  .invalid {
     color: var(--danger);
   }
 
