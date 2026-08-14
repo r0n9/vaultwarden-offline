@@ -129,6 +129,25 @@ export interface MessageContracts {
     request: { currentPassword: string; newPassword: string };
     response: Result<{ ok: true }>;
   };
+  "attachment:add": {
+    request: { cipherId: string; fileName: string; data: ArrayBuffer };
+    response: Result<{ id: string }>;
+  };
+  "attachment:get": {
+    request: { attachmentId: string };
+    response: AttachmentViewResult;
+  };
+  "attachment:delete": {
+    request: { cipherId: string; attachmentId: string };
+    response: Result<{ ok: true }>;
+  };
+}
+
+/** 附件下载结果（解密后的文件数据）。 */
+export interface AttachmentViewResult {
+  ok: boolean;
+  message?: string;
+  data?: ArrayBuffer;
 }
 
 /** 页面报告了新的凭据后，背景页给出的判定。 */

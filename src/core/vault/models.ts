@@ -159,6 +159,23 @@ export interface PasswordHistoryData<S extends string> {
   lastUsedDate: string;
 }
 
+/**
+ * 附件元数据。
+ *
+ * 元数据随条目加密存储（fileName 加密，其余为明文）；
+ * 文件二进制本体存在 IndexedDB（vwo-attachments），键为 attachmentId，
+ * 以 UserKey 加密（EncString type 2 的 iv/data/mac 拆开存放）。
+ */
+export interface AttachmentData<S extends string> {
+  id: string;
+  fileName: S;
+  /** 明文：文件字节数。 */
+  size: number;
+  /** 明文：IndexedDB 对象仓库名，固定 "files"。 */
+  containerName: string;
+  creationDate: string;
+}
+
 // --- 条目 -----------------------------------------------------------------
 
 export interface CipherData<S extends string> {
@@ -185,6 +202,7 @@ export interface CipherData<S extends string> {
 
   fields?: FieldData<S>[];
   passwordHistory?: PasswordHistoryData<S>[];
+  attachments?: AttachmentData<S>[];
 
   creationDate: string;
   revisionDate: string;

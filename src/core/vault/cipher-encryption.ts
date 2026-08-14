@@ -140,6 +140,10 @@ const SPEC = {
   },
   field: { encrypted: ["name", "value"], plain: ["type", "linkedId"] },
   passwordHistory: { encrypted: ["password"], plain: ["lastUsedDate"] },
+  attachment: {
+    encrypted: ["fileName"],
+    plain: ["id", "size", "containerName", "creationDate"],
+  },
   secureNote: { encrypted: [], plain: ["type"] },
   cipher: {
     encrypted: ["name", "notes"],
@@ -166,6 +170,7 @@ const SPEC = {
       "passport",
       "fields",
       "passwordHistory",
+      "attachments",
     ],
   },
   folder: { encrypted: ["name"], plain: ["id", "revisionDate"] },
@@ -283,6 +288,16 @@ async function transformCipher(
   );
   if (history != null) {
     result["passwordHistory"] = history;
+  }
+
+  const attachments = await transformArray(
+    source["attachments"],
+    SPEC.attachment,
+    transform,
+    "附件",
+  );
+  if (attachments != null) {
+    result["attachments"] = attachments;
   }
 
   return result;

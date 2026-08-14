@@ -211,6 +211,33 @@ describe("条目加解密往返", () => {
     }
   });
 
+  it("附件：文件名加密、其余元数据明文，往返一致", async () => {
+    const userKey = generateUserKey();
+    const view = {
+      ...fullyPopulatedCipher(),
+      attachments: [
+        {
+          id: "att-1",
+          fileName: "secret-file.txt",
+          size: 1234,
+          containerName: "files",
+          creationDate: "2026-01-01T00:00:00.000Z",
+        },
+      ],
+    };
+
+    const encrypted = await encryptCipher(view, userKey);
+
+    // 文件名加密，元数据明文。
+    expect(JSON.stringify(encrypted)).not.toContain("secret-file.txt");
+    expect(encrypted.attachments?.[0]?.id).toBe("att-1");
+    expect(encrypted.attachments?.[0]?.size).toBe(1234);
+    expect(encrypted.attachments?.[0]?.containerName).toBe("files");
+
+    // 往返一致。
+    expect(await decryptCipher(encrypted, userKey)).toEqual(view);
+  });
+
   it("可选字段缺失时不会凭空造出来", async () => {
     const userKey = generateUserKey();
     const minimal: CipherView = {

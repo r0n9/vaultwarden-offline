@@ -19,6 +19,7 @@
     onPurge,
     onToggleFavorite,
     onBack,
+    onChanged,
   }: {
     cipher: CipherView;
     folders: FolderView[];
@@ -28,6 +29,8 @@
     onPurge: () => void;
     onToggleFavorite: () => void;
     onBack: () => void;
+    /** 附件增删后刷新条目数据。 */
+    onChanged?: () => void;
   } = $props();
 
   /**
@@ -48,6 +51,82 @@
 
   let filling = $state(false);
   let fillResult = $state<AutofillFillResult | null>(null);
+
+  let attachmentBusy = $state(false);
+  let attachmentError = $state("");
+
+  /** 附件增删后通知上层刷新条目。 */
+  async function onAttachmentsChanged() {
+    onChanged?.();
+  }
+
+  async function addAttachmentFile(event: Event) {
+    const file = (event.currentTarget as HTMLInputElement).files?.[0];
+    if (file == null || attachmentBusy) {
+      return;
+    }
+    attachmentBusy = true;
+    attachmentError = "";
+    try {
+      const data = await file.arrayBuffer();
+      const result = await sendMessage("attachment:add", {
+        cipherId: cipher.id,
+        fileName: file.name,
+        data,
+      });
+      if (result?.ok !== true) {
+        attachmentError = result?.message ?? "上传失败";
+        return;
+      }
+      await onAttachmentsChanged();
+    } catch (e) {
+      attachmentError = e instanceof Error ? e.message : String(e);
+    } finally {
+      attachmentBusy = false;
+      (event.currentTarget as HTMLInputElement).value = "";
+    }
+  }
+
+  async function downloadAttachment(attachmentId: string, fileName: string) {
+    attachmentBusy = true;
+    attachmentError = "";
+    try {
+      const result = await sendMessage("attachment:get", { attachmentId });
+      if (result?.ok !== true || result.data == null) {
+        attachmentError = result?.message ?? "下载失败";
+        return;
+      }
+      const blob = new Blob([result.data], { type: "application/octet-stream" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } finally {
+      attachmentBusy = false;
+    }
+  }
+
+  async function deleteAttachmentFile(attachmentId: string) {
+    attachmentBusy = true;
+    attachmentError = "";
+    try {
+      const result = await sendMessage("attachment:delete", {
+        cipherId: cipher.id,
+        attachmentId,
+      });
+      if (result?.ok !== true) {
+        attachmentError = result?.message ?? "删除失败";
+        return;
+      }
+      await onAttachmentsChanged();
+    } finally {
+      attachmentBusy = false;
+    }
+  }
 
   const canAutofill = $derived(
     cipher.type === CipherType.Login &&
@@ -71,6 +150,16 @@
 
   const fields = $derived(TYPE_FIELDS[cipher.type] ?? []);
   const inTrash = $derived(cipher.deletedDate != null);
+
+  function formatSize(bytes: number): string {
+    if (bytes < 1024) {
+      return `${bytes} B`;
+    }
+    if (bytes < 1024 * 1024) {
+      return `${(bytes / 1024).toFixed(1)} KB`;
+    }
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  }
 
   async function verify(event: Event) {
     event.preventDefault();
@@ -180,6 +269,55 @@
           {/each}
         </details>
       {/if}
+
+      <details class="history" open={false}>
+        <summary>附件（{cipher.attachments?.length ?? 0}）</summary>
+
+        {#if attachmentError !== ""}
+          <p class="alert">{attachmentError}</p>
+        {/if}
+
+        {#if (cipher.attachments?.length ?? 0) > 0}
+          <ul class="attachments">
+            {#each cipher.attachments ?? [] as attachment (attachment.id)}
+              <li>
+                <span class="att-name" title={attachment.fileName}>{attachment.fileName}</span>
+                <span class="att-size">{formatSize(attachment.size)}</span>
+                <button
+                  type="button"
+                  onclick={() => void downloadAttachment(attachment.id, attachment.fileName)}
+                  disabled={attachmentBusy}
+                  title="下载"
+                  aria-label="下载"
+                >
+                  ⤓
+                </button>
+                <button
+                  type="button"
+                  onclick={() => void deleteAttachmentFile(attachment.id)}
+                  disabled={attachmentBusy}
+                  title="删除"
+                  aria-label="删除"
+                >
+                  ×
+                </button>
+              </li>
+            {/each}
+          </ul>
+        {:else}
+          <p class="hint">还没有附件。</p>
+        {/if}
+
+        <label class="add-attachment">
+          <input
+            type="file"
+            onchange={(e) => void addAttachmentFile(e)}
+            disabled={attachmentBusy}
+            hidden
+          />
+          <span class="add-link">{attachmentBusy ? "处理中…" : "＋ 添加附件"}</span>
+        </label>
+      </details>
     </div>
 
     <dl class="meta">
@@ -332,6 +470,73 @@
   .totp-label {
     font-size: 11px;
     color: var(--text-muted);
+  }
+
+  .attachments {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .attachments li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+  }
+
+  .att-name {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .att-size {
+    color: var(--text-muted);
+    font-size: 11px;
+    flex: none;
+  }
+
+  .attachments button {
+    flex: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+    padding: 2px 6px;
+  }
+
+  .attachments button:hover:not(:disabled) {
+    color: var(--text);
+    border-color: var(--accent);
+  }
+
+  .attachments button:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .add-attachment {
+    display: inline-flex;
+    margin-top: 6px;
+    cursor: pointer;
+  }
+
+  .add-link {
+    color: var(--accent);
+    font-size: 12px;
+  }
+
+  .add-link:hover {
+    text-decoration: underline;
   }
 
   .fill-ok {

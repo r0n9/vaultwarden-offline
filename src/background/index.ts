@@ -47,6 +47,11 @@ import {
   registerMenuRefreshTriggers,
 } from "./context-menu";
 import { fillActiveTab, fillTab } from "./autofill-fill";
+import {
+  addAttachment,
+  getAttachmentBytes,
+  removeAttachment,
+} from "./attachment-handler";
 import { getCipher } from "@/core/vault/vault-repository";
 import { commitSave, handleSaveDetected } from "./save-detection";
 import { fetchFavicon } from "./favicon";
@@ -285,6 +290,23 @@ registerHandlers({
       logger.error("修改主密码失败:", e);
       return failure(e);
     }
+  },
+
+  "attachment:add": async ({ cipherId, fileName, data }) => {
+    const result = await addAttachment(vaultStorage, cipherId, fileName, data);
+    return "id" in result
+      ? { ok: true, value: { id: result.id } }
+      : { ok: false, code: ErrorCode.Unexpected, message: result.error };
+  },
+
+  "attachment:get": async ({ attachmentId }) =>
+    await getAttachmentBytes(vaultStorage, attachmentId),
+
+  "attachment:delete": async ({ cipherId, attachmentId }) => {
+    const result = await removeAttachment(vaultStorage, cipherId, attachmentId);
+    return result.ok
+      ? { ok: true, value: { ok: true as const } }
+      : { ok: false, code: ErrorCode.Unexpected, message: result.message ?? "删除附件失败" };
   },
 });
 

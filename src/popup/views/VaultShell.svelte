@@ -115,6 +115,7 @@
     onRestore={() => void mutate(async () => await restoreCipher(storage, selected.id), true)}
     onPurge={() => void mutate(async () => await purgeCipher(storage, selected.id), true)}
     onToggleFavorite={() => void mutate(async () => await toggleFavorite(storage, selected.id))}
+    onChanged={() => void refresh()}
   />
 {:else}
   <ItemList
