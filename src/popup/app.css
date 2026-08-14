@@ -1,6 +1,7 @@
 :root {
-  --bg: #ffffff;
-  --bg-subtle: #f1f5f9;
+  /* 内容区背景：浅灰（对齐 Bitwarden——标题栏/tab 用白 surface，内容区用浅灰形成层次） */
+  --bg: #f7f8fa;
+  --bg-subtle: #eef0f3;
   --surface: #ffffff;
   --border: #e2e8f0;
   --text: #0f172a;
@@ -127,7 +128,8 @@ select {
   padding: 8px 10px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: var(--bg);
+  /* 输入框在浅灰内容区上保持白色 */
+  background: var(--surface);
   color: var(--text);
   font-size: 13px;
   font-family: inherit;

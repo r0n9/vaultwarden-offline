@@ -304,7 +304,7 @@
     padding: 8px 10px;
     border: 1px solid var(--border);
     border-radius: 6px;
-    background: var(--bg);
+    background: var(--surface);
     color: var(--text);
     font-size: 13px;
     font-family: inherit;
