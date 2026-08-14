@@ -39,6 +39,9 @@
   let settings = $state<Settings | null>(null);
   let newFolderName = $state("");
   let confirmingClear = $state(false);
+  let destroyPassword = $state("");
+  let destroyError = $state("");
+  let destroyBusy = $state(false);
   let notice = $state("");
   let busy = $state(false);
 
@@ -112,9 +115,29 @@
   }
 
   async function destroyVault() {
-    await sendMessage("vault:clear");
-    confirmingClear = false;
-    onChanged();
+    if (destroyPassword === "" || destroyBusy) {
+      return;
+    }
+    destroyBusy = true;
+    destroyError = "";
+    try {
+      // 销毁是不可逆操作，先验证主密码（防的是「密码库已解锁、人却离开了座位」）。
+      const verification = await sendMessage("vault:verifyPassword", {
+        masterPassword: destroyPassword,
+      });
+
+      if (verification?.valid !== true) {
+        destroyError = "主密码不正确";
+        return;
+      }
+
+      await sendMessage("vault:clear");
+      confirmingClear = false;
+      destroyPassword = "";
+      onChanged();
+    } finally {
+      destroyBusy = false;
+    }
   }
 </script>
 
@@ -214,10 +237,38 @@
     <button class="btn btn-secondary" onclick={lockNow}>立即锁定</button>
 
     {#if confirmingClear}
-      <p class="alert">销毁后无法恢复，确定继续？</p>
+      <p class="alert">销毁后无法恢复。请输入主密码确认操作。</p>
+      <div class="field">
+        <label for="destroy-pw">主密码</label>
+        <input
+          id="destroy-pw"
+          type="password"
+          bind:value={destroyPassword}
+          autocomplete="current-password"
+          onkeydown={(e) => {
+            if (e.key === "Enter") {
+              void destroyVault();
+            }
+          }}
+        />
+      </div>
+      {#if destroyError !== ""}
+        <p class="alert">{destroyError}</p>
+      {/if}
       <div class="row">
-        <button class="btn btn-secondary" onclick={() => (confirmingClear = false)}>取消</button>
-        <button class="btn btn-danger" onclick={destroyVault}>确认销毁</button>
+        <button
+          class="btn btn-secondary"
+          onclick={() => {
+            confirmingClear = false;
+            destroyPassword = "";
+            destroyError = "";
+          }}
+        >
+          取消
+        </button>
+        <button class="btn btn-danger" onclick={() => void destroyVault()} disabled={destroyBusy || destroyPassword === ""}>
+          {destroyBusy ? "验证中…" : "确认销毁"}
+        </button>
       </div>
     {:else}
       <button class="btn btn-danger" onclick={() => (confirmingClear = true)}>
