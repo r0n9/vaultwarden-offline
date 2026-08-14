@@ -76,15 +76,18 @@
 <header>
   <div class="brand">
     <img class="mark" src={runtime.getURL("images/icon38.png")} alt="" />
-    <span class="title">{t("appName")}</span>
+    <span class="brand-text">
+      <span class="title">{t("appName")}</span>
+      <span class="version">v{version}</span>
+    </span>
   </div>
   <div class="head-right">
     <a
       class="github"
-      href="https://github.com/r0n9/vaultwarden-offline"
+      href="https://github.com/r0n9/vaultwarden-offline/releases"
       target="_blank"
       rel="noreferrer"
-      title="GitHub 仓库"
+      title="GitHub Releases"
     >
       <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor" aria-hidden="true">
         <path
@@ -92,7 +95,6 @@
         />
       </svg>
     </a>
-    <span class="version">v{version}</span>
     <span class="badge" title="本扩展不发起任何网络请求">{t("offlineBadge")}</span>
   </div>
 </header>
@@ -191,11 +193,24 @@
     flex: none;
   }
 
+  .brand-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.2;
+  }
+
   .title {
     font-weight: 600;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  .brand-text .version {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
   }
 
   .head-right {
@@ -214,12 +229,6 @@
 
   .github:hover {
     color: var(--accent);
-  }
-
-  .version {
-    color: var(--text-muted);
-    font-size: 11px;
-    font-variant-numeric: tabular-nums;
   }
 
   .badge {

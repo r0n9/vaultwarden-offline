@@ -1,0 +1,45 @@
+name: Release
+
+# 打 tag `v*`（如 v2026.8.1）时触发：构建、打包、发布到 GitHub Release。
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Package extension
+        # dist/ 即完整扩展目录，压缩为发布资产。
+        run: |
+          cd dist
+          zip -r ../vaultwarden-offline-${{ github.ref_name }}.zip .
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: vaultwarden-offline-*.zip
+          generate_release_notes: true
