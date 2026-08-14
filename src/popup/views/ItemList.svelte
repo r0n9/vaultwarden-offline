@@ -661,12 +661,13 @@
 
   .item-row.recommended {
     border-color: transparent;
+    /* 单段光带：集中在角度起点之后 8%-18% 处，沿角度增大方向（顺时针）旋转 */
     background: conic-gradient(
       from var(--vwo-angle),
-      var(--accent),
-      transparent 30%,
-      transparent 70%,
-      var(--accent)
+      transparent,
+      var(--accent) 8%,
+      var(--accent) 18%,
+      transparent 30%
     );
     animation: vwo-spin 3s linear infinite;
   }
