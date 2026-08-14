@@ -19,8 +19,15 @@
   }
   w[FLAG] = true;
 
-  /** 浮层按钮尺寸（产品图标为 38px 源图，等比缩放到按钮内）。 */
-  const BUTTON_SIZE = 30;
+  /**
+   * 按钮尺寸下限与上限（px）。
+   *
+   * 参考 Bitwarden：按钮为正方形，高度 = 输入框高度的 53%~63%
+   * （矮字段占比大、高字段占比小），位置在字段右内侧垂直居中。
+   * 下限/上限防止过小的输入框导致按钮不可点、超大字段导致按钮失控。
+   */
+  const MIN_BUTTON_SIZE = 18;
+  const MAX_BUTTON_SIZE = 48;
 
   let activeButton: { el: HTMLElement; field: HTMLElement } | null = null;
   let activeMenu: { el: HTMLElement; field: HTMLElement } | null = null;
@@ -55,7 +62,12 @@
     menuOpen = false;
   }
 
-  /** 在字段旁放置 ⚡ 按钮（fixed 定位，字段右下）。 */
+  /**
+   * 在字段旁放置产品图标按钮（fixed 定位）。
+   *
+   * 尺寸参考 Bitwarden 的自适应逻辑：正方形，高度 = 字段高度的
+   * 53%~63%（随字段高度分档），字段右内侧垂直居中。
+   */
   function showButton(field: HTMLElement): void {
     hideAll();
 
@@ -64,28 +76,38 @@
       return;
     }
 
+    const fieldHeight = rect.height;
+    // 与 Bitwarden 相同的分档偏移：按钮垂直居中于字段右段。
+    const elementOffset =
+      fieldHeight >= 50 ? fieldHeight * 0.47 : fieldHeight >= 35 ? fieldHeight * 0.42 : fieldHeight * 0.37;
+
+    const rawSize = fieldHeight - elementOffset;
+    const size = Math.round(Math.min(Math.max(rawSize, MIN_BUTTON_SIZE), MAX_BUTTON_SIZE));
+    const top = Math.round(rect.top + elementOffset / 2);
+    const left = Math.round(Math.max(rect.right - size - 4, 0));
+
     const button = document.createElement("div");
     button.setAttribute("data-vwo-overlay-btn", "true");
     const style = button.style;
     style.position = "fixed";
     style.zIndex = "2147483646";
-    style.width = `${BUTTON_SIZE}px`;
-    style.height = `${BUTTON_SIZE}px`;
+    style.width = `${size}px`;
+    style.height = `${size}px`;
     style.cursor = "pointer";
     style.boxShadow = "0 2px 10px rgba(0,0,0,.35)";
-    style.borderRadius = "8px";
+    style.borderRadius = `${Math.round(size * 0.25)}px`;
     style.userSelect = "none";
-    style.left = `${Math.max(rect.right - BUTTON_SIZE - 4, 0)}px`;
-    style.top = `${rect.top + 2}px`;
+    style.left = `${left}px`;
+    style.top = `${top}px`;
 
     // 产品图标（盾牌 + 钥匙孔），取自扩展资源。
     const icon = document.createElement("img");
     icon.src = chrome.runtime.getURL("images/icon38.png");
     icon.alt = "";
     icon.style.display = "block";
-    icon.style.width = `${BUTTON_SIZE}px`;
-    icon.style.height = `${BUTTON_SIZE}px`;
-    icon.style.borderRadius = "8px";
+    icon.style.width = `${size}px`;
+    icon.style.height = `${size}px`;
+    icon.style.borderRadius = `${Math.round(size * 0.25)}px`;
     button.appendChild(icon);
 
     button.addEventListener("click", (event) => {
