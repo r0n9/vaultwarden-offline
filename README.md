@@ -192,7 +192,6 @@ PIN 解锁是同一 UserKey 的另一份包裹（PIN 派生密钥包裹），数
 |---|---|
 | ![微信赞赏码](public/sponsor/wechat.png) | ![支付宝收款码](public/sponsor/alipay.png) |
 
-- **爱发电**：[赞助主页](https://afdian.com)（不暴露个人收款信息，有平台背书）
 - 打赏是纯粹的感谢，**不会带来任何功能特权**——本项目永久免费、无广告、无会员。
 
 ---

@@ -216,7 +216,6 @@ If this project helps you, feel free to buy me a coffee ☕
 |---|---|
 | ![WeChat](public/sponsor/wechat.png) | ![Alipay](public/sponsor/alipay.png) |
 
-- **Afdian**: [sponsor page](https://afdian.com) (no personal payment info exposed)
 - Donations are pure gratitude — **no feature privileges**; this project stays
   free, ad-free, and membership-free forever.
 
