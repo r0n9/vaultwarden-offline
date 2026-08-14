@@ -24,6 +24,19 @@
   const MIN_INTERVAL_MS = 5_000;
   let lastTriggerAt = 0;
 
+  /**
+   * 待保存凭据的跨页面暂存。
+   *
+   * 登录表单提交通常触发页面跳转（/login → 首页），提示条随页面一起销毁。
+   * 因此在提交时先把凭据写入 sessionStorage（tab 级、随会话存活），
+   * 新页面加载时据此恢复提示条（Bitwarden 同款方案）。
+   * 密码会短暂出现在 sessionStorage 中——tab 会话级、可被页面自身读取，
+   * 处理完即清除。
+   */
+  const PENDING_KEY = "vwo:pending-save";
+  /** 提示条显示后若页面未跳转（SPA 场景），此时间后清除暂存避免重复恢复。 */
+  const STASH_CLEAR_DELAY_MS = 10_000;
+
   /** 「忽略」记忆：同站点同用户名在本次会话内不再提示。 */
   const DECLINED_PREFIX = "vwo:declined:";
 
@@ -98,6 +111,75 @@
     return { username, password: passwordInput.value };
   }
 
+  function stashCredentials(url: string, username: string, password: string): void {
+    sessionStorage.setItem(
+      PENDING_KEY,
+      JSON.stringify({ url, username, password, hostname: hostname(), at: Date.now() }),
+    );
+  }
+
+  /**
+   * 页面加载时恢复待保存凭据（上一页提交后跳转过来的场景）。
+   * 仅当暂存 hostname 与当前页面一致才恢复——登录页跳首页（同域）会恢复，
+   * 跳第三方（OAuth 等）则不打扰。
+   */
+  async function restorePending(): Promise<void> {
+    if (activeBar != null) {
+      return;
+    }
+    const raw = sessionStorage.getItem(PENDING_KEY);
+    if (raw == null) {
+      return;
+    }
+
+    try {
+      const pending = JSON.parse(raw) as {
+        url: string;
+        username: string;
+        password: string;
+        hostname: string;
+      };
+      if (pending.hostname !== hostname()) {
+        return;
+      }
+
+      const response = await chrome.runtime.sendMessage({
+        command: "save:detected",
+        payload: { url: pending.url, username: pending.username, password: pending.password },
+      });
+
+      if (response?.action === "save" || response?.action === "update") {
+        lastTriggerAt = Date.now();
+        showBar({
+          username: pending.username,
+          siteName: hostname(),
+          mode: response.action,
+          cipherId: response.cipherId,
+          onSave: async (mode) => {
+            const result = await chrome.runtime.sendMessage({
+              command: "save:commit",
+              payload: {
+                mode,
+                url: pending.url,
+                username: pending.username,
+                password: pending.password,
+                cipherId: response.cipherId,
+              },
+            });
+            return result?.ok === true;
+          },
+          onDecline: () => {
+            sessionStorage.setItem(`${DECLINED_PREFIX}${hostname()}:${pending.username}`, "1");
+          },
+        });
+      }
+    } catch {
+      // 暂存损坏或解析失败，直接清掉。
+    } finally {
+      sessionStorage.removeItem(PENDING_KEY);
+    }
+  }
+
   async function maybePrompt(form?: HTMLFormElement): Promise<void> {
     if (activeBar != null || Date.now() - lastTriggerAt < MIN_INTERVAL_MS) {
       return;
@@ -115,6 +197,9 @@
     if (sessionStorage.getItem(declineKey) != null) {
       return;
     }
+
+    // 先暂存再显示：即使提示条随页面跳转销毁，新页面也能恢复。
+    stashCredentials(url, username, password);
 
     // 密码只发给背景页，不落任何页面存储。
     const response = await chrome.runtime.sendMessage({
@@ -155,6 +240,9 @@
     },
     true,
   );
+
+  // 上一页提交后跳转过来：恢复待保存凭据的提示条。
+  void restorePending();
 
   // SPA 登录不触发 submit 时，密码输入完成（失焦）也能兜底触发。
   document.addEventListener(
@@ -251,6 +339,10 @@
     bar.appendChild(actions);
 
     const dismiss = () => bar.remove();
+
+    // 页面未跳转（SPA）时，10 秒后清除暂存避免下次刷新重复恢复；
+    // 若页面已跳转，本定时器随页面销毁，暂存留给新页面恢复。
+    setTimeout(() => sessionStorage.removeItem(PENDING_KEY), STASH_CLEAR_DELAY_MS);
 
     saveButton.addEventListener("click", async () => {
       saveButton.disabled = true;
