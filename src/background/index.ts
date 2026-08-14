@@ -20,6 +20,7 @@ import {
   saveSettings,
   touchActivity,
   unlock,
+  changeMasterPassword,
   clearPin,
   hasPin,
   setPin,
@@ -266,6 +267,16 @@ registerHandlers({
       await unlockWithPin(vaultStorage, pin);
       return { ok: true, value: { status: await currentStatusAndRefresh() } };
     } catch (e) {
+      return failure(e);
+    }
+  },
+
+  "vault:changePassword": async ({ currentPassword, newPassword }) => {
+    try {
+      await changeMasterPassword(vaultStorage, currentPassword, newPassword);
+      return { ok: true, value: { ok: true as const } };
+    } catch (e) {
+      logger.error("修改主密码失败:", e);
       return failure(e);
     }
   },

@@ -121,6 +121,10 @@ export interface MessageContracts {
     request: { pin: string };
     response: Result<{ status: VaultStatus }>;
   };
+  "vault:changePassword": {
+    request: { currentPassword: string; newPassword: string };
+    response: Result<{ ok: true }>;
+  };
 }
 
 /** 页面报告了新的凭据后，背景页给出的判定。 */

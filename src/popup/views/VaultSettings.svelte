@@ -13,7 +13,7 @@
     newFolderDraft,
     saveFolder,
   } from "@/core/vault/vault-repository";
-  import { validatePin } from "@/core/vault/vault.service";
+  import { validateMasterPassword, validatePin } from "@/core/vault/vault.service";
   import { sendMessage } from "@/platform/messaging";
   import type { VaultSummary } from "@/platform/messaging/types";
   import { browserVaultStorage as storage } from "@/platform/storage/browser-vault-storage";
@@ -38,6 +38,13 @@
   } = $props();
 
   let settings = $state<Settings | null>(null);
+
+  let passwordChangeMode = $state(false);
+  let currentPassword = $state("");
+  let newPassword = $state("");
+  let newPasswordConfirm = $state("");
+  let passwordChangeError = $state("");
+  let passwordChangeBusy = $state(false);
 
   let pinEnabled = $state(false);
   let pinMode = $state<"idle" | "edit" | "remove">("idle");
@@ -127,6 +134,34 @@
 
   const pinInvalid = $derived(validatePin(pinValue));
   const pinMismatch = $derived(pinConfirm.length > 0 && pinValue !== pinConfirm);
+
+  const newPasswordError = $derived(validateMasterPassword(newPassword));
+  const newPasswordMismatch = $derived(newPasswordConfirm.length > 0 && newPassword !== newPasswordConfirm);
+
+  async function submitPasswordChange() {
+    if (passwordChangeBusy || newPasswordError != null || newPasswordMismatch) {
+      return;
+    }
+    passwordChangeBusy = true;
+    passwordChangeError = "";
+    try {
+      const result = await sendMessage("vault:changePassword", {
+        currentPassword,
+        newPassword,
+      });
+      if (result?.ok === true) {
+        passwordChangeMode = false;
+        currentPassword = "";
+        newPassword = "";
+        newPasswordConfirm = "";
+        notice = "主密码已更新。";
+      } else {
+        passwordChangeError = result?.message ?? "修改失败";
+      }
+    } finally {
+      passwordChangeBusy = false;
+    }
+  }
 
   async function savePin() {
     if (pinError !== "" || pinBusy) {
@@ -365,6 +400,66 @@
 
   <section class="panel danger">
     <h2>危险区</h2>
+
+    {#if passwordChangeMode}
+      <div class="field">
+        <label for="cur-pw">当前主密码</label>
+        <input
+          id="cur-pw"
+          type="password"
+          bind:value={currentPassword}
+          autocomplete="current-password"
+        />
+      </div>
+      <div class="field">
+        <label for="new-pw">新主密码</label>
+        <input id="new-pw" type="password" bind:value={newPassword} autocomplete="new-password" />
+        {#if newPassword.length > 0 && newPasswordError != null}
+          <p class="hint invalid">{newPasswordError}</p>
+        {/if}
+      </div>
+      <div class="field">
+        <label for="new-pw2">确认新主密码</label>
+        <input
+          id="new-pw2"
+          type="password"
+          bind:value={newPasswordConfirm}
+          autocomplete="new-password"
+        />
+        {#if newPasswordMismatch}
+          <p class="hint invalid">两次输入不一致</p>
+        {/if}
+      </div>
+      {#if passwordChangeError !== ""}
+        <p class="alert">{passwordChangeError}</p>
+      {/if}
+      <div class="row">
+        <button
+          class="btn btn-secondary"
+          onclick={() => {
+            passwordChangeMode = false;
+            currentPassword = "";
+            newPassword = "";
+            newPasswordConfirm = "";
+            passwordChangeError = "";
+          }}
+        >
+          取消
+        </button>
+        <button
+          class="btn"
+          onclick={() => void submitPasswordChange()}
+          disabled={passwordChangeBusy || currentPassword === "" || newPasswordError != null || newPasswordMismatch}
+        >
+          {passwordChangeBusy ? "修改中…" : "确认修改"}
+        </button>
+      </div>
+    {:else}
+      <button class="btn btn-secondary" onclick={() => (passwordChangeMode = true)}>
+        修改主密码
+      </button>
+    {/if}
+
     <button class="btn btn-secondary" onclick={lockNow}>立即锁定</button>
 
     {#if confirmingClear}
