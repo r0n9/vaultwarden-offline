@@ -72,7 +72,12 @@ async function doRefresh(storage: VaultStorage): Promise<void> {
       }
 
       for (const cipher of matches) {
-        const title = cipher.name.slice(0, 32);
+        // 标题 = 名称 + 用户名（同名不同账号时便于区分）；用户名为空则只显示名称。
+        const username = cipher.login?.username?.trim();
+        const title = (username != null && username !== ""
+          ? `${cipher.name} · ${username}`
+          : cipher.name
+        ).slice(0, 40);
         const id = cipher.id;
         await api().contextMenus.create({
           id: `${MENU_FILL_PREFIX}${id}`,
