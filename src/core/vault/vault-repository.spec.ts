@@ -10,6 +10,7 @@ import {
   deleteFolder,
   emptyTrash,
   getCipher,
+  loadFolders,
   loadVault,
   newCipherDraft,
   newFolderDraft,
@@ -72,6 +73,26 @@ describe("条目增删改", () => {
     expect(new Date(updated.revisionDate).getTime()).toBeGreaterThanOrEqual(
       new Date(saved.creationDate).getTime(),
     );
+  });
+});
+
+describe("loadFolders", () => {
+  it("不解密条目，只返回文件夹", async () => {
+    await addLogin("GitHub", "secret");
+    await saveFolder(storage, newFolderDraft("工作"));
+
+    const folders = await loadFolders(storage);
+
+    expect(folders.map((f) => f.name)).toEqual(["工作"]);
+  });
+
+  it("文件夹也是解密后的明文", async () => {
+    await saveFolder(storage, newFolderDraft("机密-工作"));
+
+    const folders = await loadFolders(storage);
+
+    expect(folders[0]?.name).toBe("机密-工作");
+    expect(JSON.stringify(await readVaultData(storage))).not.toContain("机密-工作");
   });
 });
 

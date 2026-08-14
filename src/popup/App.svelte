@@ -1,7 +1,7 @@
 <script lang="ts">
   import { VaultStatus } from "@/core/state/vault-status";
   import type { FolderView } from "@/core/vault/models";
-  import { loadVault } from "@/core/vault/vault-repository";
+  import { loadFolders } from "@/core/vault/vault-repository";
   import { runtime, t } from "@/platform/browser-api";
   import { sendMessage } from "@/platform/messaging";
   import type { VaultSummary } from "@/platform/messaging/types";
@@ -60,7 +60,7 @@
     void refresh();
   });
 
-  // 切到 Settings tab 时刷新文件夹数据（解密全部条目约几十毫秒）。
+  // 切到 Settings tab 时刷新文件夹数据（只解密文件夹，不解密全部条目）。
   $effect(() => {
     if (tab !== "settings" || summary?.status !== VaultStatus.Unlocked) {
       return;
@@ -69,9 +69,8 @@
     void (async () => {
       try {
         const started = performance.now();
-        const snapshot = await loadVault(storage);
+        settingsFolders = await loadFolders(storage);
         settingsLoadMs = performance.now() - started;
-        settingsFolders = snapshot.folders;
       } finally {
         settingsLoading = false;
       }

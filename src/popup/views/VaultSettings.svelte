@@ -212,7 +212,7 @@
         <dd>{folders.length}</dd>
         <dt>密钥派生</dt>
         <dd>{kdfLabel}</dd>
-        <dt>解密耗时</dt>
+        <dt>加载耗时</dt>
         <dd>{loadMs.toFixed(0)} ms</dd>
         <dt>创建于</dt>
         <dd>{summary.createdAt == null ? "—" : new Date(summary.createdAt).toLocaleDateString()}</dd>

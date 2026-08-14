@@ -30,6 +30,18 @@ export async function loadVault(storage: VaultStorage): Promise<VaultSnapshot> {
   return { ciphers, folders };
 }
 
+/**
+ * 只读文件夹列表（不解密条目）。
+ *
+ * 设置页只需要文件夹，全量解密几百条条目纯属浪费——读取的仍是同一个
+ * VaultData blob，但解密只落在 folders 上。
+ */
+export async function loadFolders(storage: VaultStorage): Promise<FolderView[]> {
+  const userKey = await requireUserKey(storage);
+  const data = await readVaultData(storage);
+  return Promise.all(data.folders.map((folder) => decryptFolder(folder, userKey)));
+}
+
 export async function getCipher(
   storage: VaultStorage,
   id: string,
