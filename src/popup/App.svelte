@@ -135,7 +135,11 @@
   {:else if summary.status === VaultStatus.Locked}
     <UnlockVault onUnlocked={refresh} />
   {:else if tab === "vault"}
-    <VaultShell onChanged={refresh} {collectRequest} />
+    <VaultShell
+      onChanged={refresh}
+      {collectRequest}
+      onCollectHandled={() => (collectRequest = 0)}
+    />
   {:else if tab === "generator"}
     <GeneratorView />
   {:else}

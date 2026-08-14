@@ -20,8 +20,16 @@
   import ItemEdit from "./ItemEdit.svelte";
   import ItemList from "./ItemList.svelte";
 
-  const { onChanged, collectRequest }: { onChanged: () => void; collectRequest: number } =
-    $props();
+  const {
+    onChanged,
+    collectRequest,
+    onCollectHandled,
+  }: {
+    onChanged: () => void;
+    collectRequest: number;
+    /** 进入采集屏后调用，通知 App 消费该请求（否则每次挂载都强制回采集屏）。 */
+    onCollectHandled?: () => void;
+  } = $props();
 
   type Screen =
     | { name: "list" }
@@ -59,10 +67,12 @@
   }
 
   // 设置页发起「检测当前页面字段」时，外部把 collectRequest 加一，
-  // 这里据此切到采集屏（collect 屏只存在于本组件内）。
+  // 这里据此切到采集屏并**消费该请求**——否则该计数永久 >0，
+  // 每次挂载都强制进采集屏，从采集屏切走再切回就回不到列表了。
   $effect(() => {
     if (collectRequest > 0) {
       screen = { name: "collect" };
+      onCollectHandled?.();
     }
   });
 
