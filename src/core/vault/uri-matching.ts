@@ -86,7 +86,8 @@ export function baseDomain(url: string): string | undefined {
   return lastTwo;
 }
 
-function hostWithPort(url: string): string | undefined {
+/** 主机名 + 端口（如 `example.com:8080`），用于端口感知的匹配排序。 */
+export function hostWithPort(url: string): string | undefined {
   const trimmed = url.trim();
   if (trimmed === "") {
     return undefined;

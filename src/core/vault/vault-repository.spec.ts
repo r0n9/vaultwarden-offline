@@ -310,6 +310,53 @@ describe("筛选与排序", () => {
     expect(sorted.map((c) => c.name)).toEqual(["子域（a.mail.example.com）", "仅注册域"]);
   });
 
+  it("站点匹配排序：带相同端口的精确匹配排最前", () => {
+    // 站点 https://gitea.880508.xyz:3000/：
+    // 条目 A 带同端口（精确），条目 B 无端口（主机相同但端口不同），
+    // 条目 C 带不同端口。A 应排最前。
+    const url = "https://gitea.880508.xyz:3000/";
+    const withSamePort = {
+      ...items[0]!,
+      name: "带同端口",
+      login: { uris: [{ uri: "https://gitea.880508.xyz:3000/" }] },
+    };
+    const noPort = {
+      ...items[1]!,
+      name: "无端口",
+      login: { uris: [{ uri: "https://gitea.880508.xyz/" }] },
+    };
+    const differentPort = {
+      ...items[3]!,
+      name: "不同端口",
+      login: { uris: [{ uri: "https://gitea.880508.xyz:8080/" }] },
+    };
+
+    const sorted = sortCiphersForUrl([noPort, differentPort, withSamePort], url);
+
+    expect(sorted.map((c) => c.name)).toEqual(["带同端口", "无端口", "不同端口"]);
+  });
+
+  it("站点匹配排序：站点无端口时带端口条目不优于无端口条目", () => {
+    const url = "https://example.com/";
+    const plain = {
+      ...items[0]!,
+      name: "无端口",
+      login: { uris: [{ uri: "https://example.com/" }] },
+    };
+    const withPort = {
+      ...items[1]!,
+      name: "带 3000",
+      login: { uris: [{ uri: "https://example.com:3000/" }] },
+    };
+
+    // 主机相同（无端口 vs 带端口）视为同级，按名称排。
+    const sorted = sortCiphersForUrl([withPort, plain], url);
+    expect(sorted.map((c) => c.name)).toEqual(["带 3000", "无端口"]);
+
+    const sortedReverse = sortCiphersForUrl([plain, withPort], url);
+    expect(sortedReverse.map((c) => c.name)).toEqual(["无端口", "带 3000"]);
+  });
+
   it("站点匹配排序：同精度内按收藏与名称", () => {
     const url = "https://example.com";
     const favorited = {

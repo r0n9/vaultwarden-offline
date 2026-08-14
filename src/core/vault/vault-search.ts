@@ -1,6 +1,6 @@
 import { CipherType } from "./enums";
 import type { CipherView } from "./models";
-import { baseDomain, extractHostname } from "./uri-matching";
+import { baseDomain, extractHostname, hostWithPort } from "./uri-matching";
 
 /**
  * 搜索、排序与展示辅助。
@@ -142,10 +142,11 @@ export function sortCiphers(ciphers: CipherView[]): CipherView[] {
 export function sortCiphersForUrl(ciphers: CipherView[], url: string): CipherView[] {
   const targetHost = extractHostname(url);
   const targetBase = targetHost == null ? undefined : baseDomain(url);
+  const targetHostWithPort = hostWithPort(url);
 
   return [...ciphers].sort((a, b) => {
-    const precisionA = matchPrecision(a, targetHost, targetBase);
-    const precisionB = matchPrecision(b, targetHost, targetBase);
+    const precisionA = matchPrecision(a, targetHost, targetBase, targetHostWithPort);
+    const precisionB = matchPrecision(b, targetHost, targetBase, targetHostWithPort);
 
     if (precisionA !== precisionB) {
       return precisionB - precisionA;
@@ -162,6 +163,7 @@ function matchPrecision(
   cipher: CipherView,
   targetHost: string | undefined,
   targetBase: string | undefined,
+  targetHostWithPort: string | undefined,
 ): number {
   if (targetHost == null || targetBase == null) {
     return 0;
@@ -179,7 +181,12 @@ function matchPrecision(
     }
 
     let score = 0;
-    if (uriHost === targetHost) {
+    const uriHostWithPort = hostWithPort(entry.uri);
+    if (uriHostWithPort != null && uriHostWithPort === targetHostWithPort) {
+      // 主机 + 端口完全相同（都带相同端口，或都不带端口）。
+      score = 5;
+    } else if (uriHost === targetHost) {
+      // 主机相同但端口不同/一方带端口：example.com:3000 之于 example.com。
       score = 4;
     } else if (targetHost.endsWith(`.${uriHost}`)) {
       // 条目是父域：example.com 之于 mail.example.com。
