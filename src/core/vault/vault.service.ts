@@ -133,7 +133,7 @@ export async function createVault(
   if ((await getMeta(storage)) != null) {
     throw new Error("本地已存在密码库，如需重建请先清除");
   }
-  assertPasswordNotEmpty(masterPassword);
+  assertPasswordPolicy(masterPassword);
 
   const kdf = options.kdf ?? defaultKdfConfig();
   const salt = generateSalt();
@@ -272,7 +272,7 @@ export async function changeMasterPassword(
   newPassword: string,
   kdf?: KdfConfig,
 ): Promise<void> {
-  assertPasswordNotEmpty(newPassword);
+  assertPasswordPolicy(newPassword);
 
   const meta = await getMeta(storage);
   if (meta == null) {
@@ -376,8 +376,31 @@ export async function getThrottleState(storage: VaultStorage): Promise<ThrottleS
   return await readThrottle(storage);
 }
 
-function assertPasswordNotEmpty(password: string): void {
+/**
+ * 本地主密码策略：至少 8 位，且必须同时包含字母与数字。
+ *
+ * 返回错误消息；合法时返回 null。创建与修改主密码共用，
+ * UI 的实时提示也复用此函数，保证两处口径一致。
+ */
+export function validateMasterPassword(password: string): string | null {
   if (password.length === 0) {
-    throw new Error("主密码不能为空");
+    return "主密码不能为空";
+  }
+  if (password.length < 8) {
+    return `至少 8 位，当前 ${password.length} 位`;
+  }
+  if (!/[a-zA-Z]/.test(password)) {
+    return "需同时包含字母和数字";
+  }
+  if (!/\d/.test(password)) {
+    return "需同时包含字母和数字";
+  }
+  return null;
+}
+
+function assertPasswordPolicy(password: string): void {
+  const error = validateMasterPassword(password);
+  if (error != null) {
+    throw new Error(error);
   }
 }

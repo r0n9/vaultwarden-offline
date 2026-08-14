@@ -9,7 +9,7 @@
   } from "@/core/import-export/types";
   import { mergeIntoVault, parseImport, probeImport } from "@/core/import-export/import.service";
   import { VaultStatus } from "@/core/state/vault-status";
-  import { createVault } from "@/core/vault/vault.service";
+  import { createVault, validateMasterPassword } from "@/core/vault/vault.service";
   import { sendMessage } from "@/platform/messaging";
   import { browserVaultStorage } from "@/platform/storage/browser-vault-storage";
 
@@ -78,10 +78,11 @@
     }
   }
 
+  const masterPasswordError = $derived(validateMasterPassword(masterPassword));
   const canImport = $derived(
     parsed != null &&
       !busy &&
-      (!bootstrap || (masterPassword.length >= 8 && masterPassword === masterConfirm)),
+      (!bootstrap || (masterPasswordError == null && masterPassword === masterConfirm)),
   );
 
   async function doImport() {
@@ -152,10 +153,10 @@
       <div class="field">
         <label for="mpw">设置本地主密码 <span class="required" title="必填">*</span></label>
         <input id="mpw" type="password" bind:value={masterPassword} autocomplete="new-password" />
-        {#if masterPassword.length > 0 && masterPassword.length < 8}
-          <p class="hint invalid">至少 8 位，当前 {masterPassword.length} 位</p>
+        {#if masterPassword.length > 0 && masterPasswordError != null}
+          <p class="hint invalid">{masterPasswordError}</p>
         {:else}
-          <p class="hint">至少 8 位。它只用于加密本地数据，与导出文件的口令无关，且无法找回。</p>
+          <p class="hint">至少 8 位且含字母和数字。它只用于加密本地数据，与导出文件的口令无关，且无法找回。</p>
         {/if}
       </div>
       <div class="field">

@@ -15,7 +15,7 @@ let storage: VaultStorage;
 
 beforeEach(async () => {
   storage = createMemoryStorage();
-  await createVault(storage, "master", { kdf: FAST_KDF });
+  await createVault(storage, "master12", { kdf: FAST_KDF });
 });
 
 function login(username: string, uris: string[], password = "pw"): CipherView {
@@ -125,14 +125,14 @@ describe("commitSave", () => {
   it("更新已有条目：保留用户名与 URI，只换密码", async () => {
     const existing = await saveCipher(
       storage,
-      login("octocat", ["https://github.com"], "old-password"),
+      login("octocat", ["https://github.com"], "old-pass1"),
     );
 
     const result = await commitSave(storage, {
       mode: "update",
       url: "https://github.com",
       username: "octocat",
-      password: "new-password",
+      password: "new-pass1",
       cipherId: existing.id,
     });
 
@@ -140,7 +140,7 @@ describe("commitSave", () => {
 
     const { ciphers } = await loadVault(storage);
     expect(ciphers).toHaveLength(1);
-    expect(ciphers[0]?.login?.password).toBe("new-password");
+    expect(ciphers[0]?.login?.password).toBe("new-pass1");
     expect(ciphers[0]?.login?.username).toBe("octocat");
     expect(ciphers[0]?.login?.uris).toEqual([{ uri: "https://github.com" }]);
   });

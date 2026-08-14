@@ -21,7 +21,7 @@ let storage: VaultStorage;
 
 beforeEach(async () => {
   storage = createMemoryStorage();
-  await createVault(storage, "local-master-password", { kdf: FAST_KDF });
+  await createVault(storage, "local-master-pw1", { kdf: FAST_KDF });
 });
 
 const SAMPLE: ParsedVault = {

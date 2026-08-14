@@ -28,7 +28,7 @@ let storage: VaultStorage;
 
 beforeEach(async () => {
   storage = createMemoryStorage();
-  await createVault(storage, "master", { kdf: FAST_KDF });
+  await createVault(storage, "master12", { kdf: FAST_KDF });
 });
 
 async function addLogin(name: string, password = "pw"): Promise<CipherView> {
@@ -78,15 +78,15 @@ describe("条目增删改", () => {
 describe("密码历史", () => {
   it("改密码时自动保留旧值", async () => {
     // 改错了要能找回上一个值，这是密码管理器的基本期待。
-    const saved = await addLogin("GitHub", "old-password");
+    const saved = await addLogin("GitHub", "old-pass1");
 
     const updated = await saveCipher(storage, {
       ...saved,
-      login: { ...saved.login, password: "new-password" },
+      login: { ...saved.login, password: "new-pass1" },
     });
 
-    expect(updated.passwordHistory?.[0]?.password).toBe("old-password");
-    expect(updated.login?.password).toBe("new-password");
+    expect(updated.passwordHistory?.[0]?.password).toBe("old-pass1");
+    expect(updated.login?.password).toBe("new-pass1");
   });
 
   it("密码没变则不产生历史", async () => {

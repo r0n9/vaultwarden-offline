@@ -10,6 +10,7 @@ import { VaultStatus } from "@/core/state/vault-status";
 import {
   InvalidMasterPasswordError,
   ThrottledError,
+  validateMasterPassword,
   changeMasterPassword,
   clearVault,
   createVault,
@@ -39,20 +40,49 @@ beforeEach(() => {
   storage = createMemoryStorage();
 });
 
+describe("主密码策略", () => {
+  it("至少 8 位且含字母和数字才合法", () => {
+    expect(validateMasterPassword("abcdefgh")).toBe("需同时包含字母和数字");
+    expect(validateMasterPassword("12345678")).toBe("需同时包含字母和数字");
+    expect(validateMasterPassword("abc123")).toBe("至少 8 位，当前 6 位");
+    expect(validateMasterPassword("")).toBe("主密码不能为空");
+    expect(validateMasterPassword("abc12345")).toBeNull();
+    expect(validateMasterPassword("密码abc123")).toBeNull();
+  });
+
+  it("创建密码库拒绝不合规主密码", async () => {
+    await expect(createVault(storage, "password", { kdf: FAST_KDF })).rejects.toThrow(
+      /同时包含字母和数字/,
+    );
+    await expect(createVault(storage, "12345678", { kdf: FAST_KDF })).rejects.toThrow(
+      /同时包含字母和数字/,
+    );
+    await expect(createVault(storage, "short1", { kdf: FAST_KDF })).rejects.toThrow(/至少 8 位/);
+  });
+
+  it("修改主密码同样要求合规", async () => {
+    await createVault(storage, "master-pass1", { kdf: FAST_KDF });
+
+    await expect(changeMasterPassword(storage, "master-pass1", "weakpass")).rejects.toThrow(
+      /同时包含字母和数字/,
+    );
+  });
+});
+
 describe("状态机", () => {
   it("初始为未初始化", async () => {
     expect(await getStatus(storage)).toBe(VaultStatus.Uninitialized);
   });
 
   it("创建后处于已解锁", async () => {
-    await createVault(storage, "master-password", { kdf: FAST_KDF });
+    await createVault(storage, "master-pass1", { kdf: FAST_KDF });
 
     expect(await getStatus(storage)).toBe(VaultStatus.Unlocked);
     expect(await getSessionUserKey(storage)).toBeDefined();
   });
 
   it("锁定后密文仍在，仅丢弃运行期密钥", async () => {
-    await createVault(storage, "master-password", { kdf: FAST_KDF });
+    await createVault(storage, "master-pass1", { kdf: FAST_KDF });
     const metaBefore = await getMeta(storage);
 
     await lock(storage);
@@ -63,7 +93,7 @@ describe("状态机", () => {
   });
 
   it("销毁后回到未初始化且数据不可恢复", async () => {
-    await createVault(storage, "master-password", { kdf: FAST_KDF });
+    await createVault(storage, "master-pass1", { kdf: FAST_KDF });
 
     await clearVault(storage);
 
@@ -73,9 +103,9 @@ describe("状态机", () => {
   });
 
   it("拒绝在已有密码库时重复创建", async () => {
-    await createVault(storage, "master-password", { kdf: FAST_KDF });
+    await createVault(storage, "master-pass1", { kdf: FAST_KDF });
 
-    await expect(createVault(storage, "another", { kdf: FAST_KDF })).rejects.toThrow(/已存在/);
+    await expect(createVault(storage, "another1", { kdf: FAST_KDF })).rejects.toThrow(/已存在/);
   });
 
   it("拒绝空主密码", async () => {
@@ -85,12 +115,12 @@ describe("状态机", () => {
 
 describe("解锁", () => {
   beforeEach(async () => {
-    await createVault(storage, "correct-password", { kdf: FAST_KDF });
+    await createVault(storage, "correct-pass1", { kdf: FAST_KDF });
     await lock(storage);
   });
 
   it("正确密码可解锁", async () => {
-    await unlock(storage, "correct-password");
+    await unlock(storage, "correct-pass1");
 
     expect(await getStatus(storage)).toBe(VaultStatus.Unlocked);
   });
@@ -100,7 +130,7 @@ describe("解锁", () => {
     const first = await getSessionUserKey(storage);
     expect(first).toBeUndefined();
 
-    const unlocked = await unlock(storage, "correct-password");
+    const unlocked = await unlock(storage, "correct-pass1");
     const fromSession = await getSessionUserKey(storage);
 
     expect(fromSession?.toBase64()).toBe(unlocked.toBase64());
@@ -121,7 +151,7 @@ describe("解锁", () => {
 
 describe("解锁节流", () => {
   beforeEach(async () => {
-    await createVault(storage, "correct-password", { kdf: FAST_KDF });
+    await createVault(storage, "correct-pass1", { kdf: FAST_KDF });
     await lock(storage);
   });
 
@@ -139,7 +169,7 @@ describe("解锁节流", () => {
     }
 
     // 即便密码正确，也必须先等冷却结束。
-    await expect(unlock(storage, "correct-password", now + 1)).rejects.toThrow(ThrottledError);
+    await expect(unlock(storage, "correct-pass1", now + 1)).rejects.toThrow(ThrottledError);
   });
 
   it("等待期过后可正常解锁", async () => {
@@ -148,7 +178,7 @@ describe("解锁节流", () => {
       await expect(unlock(storage, "wrong", now)).rejects.toThrow(InvalidMasterPasswordError);
     }
 
-    await unlock(storage, "correct-password", now + 60_000);
+    await unlock(storage, "correct-pass1", now + 60_000);
 
     expect(await getStatus(storage)).toBe(VaultStatus.Unlocked);
   });
@@ -180,7 +210,7 @@ describe("解锁节流", () => {
     const now = 1_000_000;
     await expect(unlock(storage, "wrong", now)).rejects.toThrow(InvalidMasterPasswordError);
 
-    await unlock(storage, "correct-password", now);
+    await unlock(storage, "correct-pass1", now);
     await lock(storage);
 
     // 计数已清零，因此又能连续错两次而不被节流。
@@ -197,46 +227,46 @@ describe("解锁节流", () => {
     // 模拟浏览器重启：session 全清。
     await storage.session.remove([StorageKeys.SessionUserKey, StorageKeys.SessionLastActivity]);
 
-    await expect(unlock(storage, "correct-password", now + 1)).rejects.toThrow(ThrottledError);
+    await expect(unlock(storage, "correct-pass1", now + 1)).rejects.toThrow(ThrottledError);
   });
 });
 
 describe("修改主密码", () => {
   it("换密码后 UserKey 不变，已有数据仍可解密", async () => {
-    await createVault(storage, "old-password", { kdf: FAST_KDF });
+    await createVault(storage, "old-pass1", { kdf: FAST_KDF });
     const originalKey = (await getSessionUserKey(storage))?.toBase64();
 
-    await changeMasterPassword(storage, "old-password", "new-password");
+    await changeMasterPassword(storage, "old-pass1", "new-pass1");
     await lock(storage);
-    await unlock(storage, "new-password");
+    await unlock(storage, "new-pass1");
 
     // 这是整个密钥层级设计的意义：改密码只重新包裹 UserKey，不动数据。
     expect((await getSessionUserKey(storage))?.toBase64()).toBe(originalKey);
   });
 
   it("旧密码随即失效", async () => {
-    await createVault(storage, "old-password", { kdf: FAST_KDF });
+    await createVault(storage, "old-pass1", { kdf: FAST_KDF });
 
-    await changeMasterPassword(storage, "old-password", "new-password");
+    await changeMasterPassword(storage, "old-pass1", "new-pass1");
     await lock(storage);
 
-    await expect(unlock(storage, "old-password")).rejects.toThrow(InvalidMasterPasswordError);
+    await expect(unlock(storage, "old-pass1")).rejects.toThrow(InvalidMasterPasswordError);
   });
 
   it("当前密码不对则拒绝修改", async () => {
-    await createVault(storage, "old-password", { kdf: FAST_KDF });
+    await createVault(storage, "old-pass1", { kdf: FAST_KDF });
     await lock(storage);
 
-    await expect(changeMasterPassword(storage, "wrong", "new-password")).rejects.toThrow(
+    await expect(changeMasterPassword(storage, "wrong", "new-pass1")).rejects.toThrow(
       InvalidMasterPasswordError,
     );
   });
 
   it("换密码会同时更换 salt", async () => {
-    await createVault(storage, "old-password", { kdf: FAST_KDF });
+    await createVault(storage, "old-pass1", { kdf: FAST_KDF });
     const saltBefore = (await getMeta(storage))?.salt;
 
-    await changeMasterPassword(storage, "old-password", "new-password");
+    await changeMasterPassword(storage, "old-pass1", "new-pass1");
 
     expect((await getMeta(storage))?.salt).not.toBe(saltBefore);
   });
@@ -244,13 +274,13 @@ describe("修改主密码", () => {
 
 describe("会话与活动时间", () => {
   it("创建即记录活动时间", async () => {
-    await createVault(storage, "pw", { kdf: FAST_KDF });
+    await createVault(storage, "pw1234abcd", { kdf: FAST_KDF });
 
     expect(await getLastActivity(storage)).toBeTypeOf("number");
   });
 
   it("touch 刷新活动时间", async () => {
-    await createVault(storage, "pw", { kdf: FAST_KDF });
+    await createVault(storage, "pw1234abcd", { kdf: FAST_KDF });
 
     await touchActivity(storage, 5_000_000);
 
@@ -258,7 +288,7 @@ describe("会话与活动时间", () => {
   });
 
   it("锁定态下 touch 不产生任何会话数据", async () => {
-    await createVault(storage, "pw", { kdf: FAST_KDF });
+    await createVault(storage, "pw1234abcd", { kdf: FAST_KDF });
     await lock(storage);
 
     await touchActivity(storage, 5_000_000);
@@ -267,7 +297,7 @@ describe("会话与活动时间", () => {
   });
 
   it("requireUserKey 在锁定态抛错", async () => {
-    await createVault(storage, "pw", { kdf: FAST_KDF });
+    await createVault(storage, "pw1234abcd", { kdf: FAST_KDF });
     await lock(storage);
 
     await expect(requireUserKey(storage)).rejects.toThrow(/锁定状态/);
@@ -276,7 +306,7 @@ describe("会话与活动时间", () => {
 
 describe("最近使用", () => {
   it("记录后可读回", async () => {
-    await createVault(storage, "pw", { kdf: FAST_KDF });
+    await createVault(storage, "pw1234abcd", { kdf: FAST_KDF });
 
     expect(await getLastUsedLogin(storage)).toBeUndefined();
 
@@ -288,7 +318,7 @@ describe("最近使用", () => {
   });
 
   it("锁定不擦除记录——快捷键在下次解锁后仍能命中上次的条目", async () => {
-    await createVault(storage, "pw", { kdf: FAST_KDF });
+    await createVault(storage, "pw1234abcd", { kdf: FAST_KDF });
     await setLastUsedLogin(storage, "cipher-1");
     await lock(storage);
 
@@ -296,7 +326,7 @@ describe("最近使用", () => {
   });
 
   it("销毁密码库时一并清除", async () => {
-    await createVault(storage, "pw", { kdf: FAST_KDF });
+    await createVault(storage, "pw1234abcd", { kdf: FAST_KDF });
     await setLastUsedLogin(storage, "cipher-1");
     await clearVault(storage);
 
@@ -310,7 +340,7 @@ describe("数据读写", () => {
   });
 
   it("写入后可读回", async () => {
-    await createVault(storage, "pw", { kdf: FAST_KDF });
+    await createVault(storage, "pw1234abcd", { kdf: FAST_KDF });
     const data = { ciphers: [], folders: [] };
 
     await writeVaultData(storage, data);

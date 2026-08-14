@@ -1,5 +1,6 @@
 <script lang="ts">
   import { type KdfConfig, defaultArgon2Config, defaultKdfConfig } from "@/core/crypto";
+  import { validateMasterPassword } from "@/core/vault/vault.service";
   import { sendMessage } from "@/platform/messaging";
 
   import { openInTab } from "../lib/navigation";
@@ -13,7 +14,8 @@
   let error = $state("");
 
   const mismatch = $derived(confirmation.length > 0 && password !== confirmation);
-  const canSubmit = $derived(password.length >= 8 && password === confirmation && !busy);
+  const passwordError = $derived(validateMasterPassword(password));
+  const canSubmit = $derived(passwordError == null && password === confirmation && !busy);
 
   async function submit(event: Event) {
     event.preventDefault();
@@ -60,10 +62,10 @@
   <div class="field">
     <label for="pw">主密码 <span class="required" title="必填">*</span></label>
     <input id="pw" type="password" bind:value={password} autocomplete="new-password" />
-    {#if password.length > 0 && password.length < 8}
-      <p class="hint invalid">至少 8 位，当前 {password.length} 位</p>
+    {#if password.length > 0 && passwordError != null}
+      <p class="hint invalid">{passwordError}</p>
     {:else}
-      <p class="hint">至少 8 位。建议使用一句只有你知道的长句子。</p>
+      <p class="hint">至少 8 位，且同时包含字母和数字。建议使用一句只有你知道的长句子。</p>
     {/if}
   </div>
 
