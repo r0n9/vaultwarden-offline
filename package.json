@@ -1,6 +1,6 @@
 {
   "name": "vaultwarden-offline",
-  "version": "2026.8.5",
+  "version": "2026.8.6",
   "description": "完全离线的密码库浏览器插件，兼容 Bitwarden / Vaultwarden 数据格式",
   "type": "module",
   "private": true,
