@@ -7,12 +7,9 @@
     cipherSubtitle,
     filterCiphers,
     sortCiphers,
-    sortCiphersForUrl,
   } from "@/core/vault/vault-search";
 
   import CipherIcon from "../components/CipherIcon.svelte";
-
-  type Scope = "site" | "all" | "favorites" | "trash";
 
   const {
     ciphers,
@@ -29,53 +26,99 @@
   } = $props();
 
   let query = $state("");
-  // 有可用站点地址时默认停在「当前站点」——那是打开弹窗最常见的意图。
-  // svelte-ignore state_referenced_locally
-  let scope = $state<Scope>(activeUrl == null ? "all" : "site");
-  let folderId = $state<string>("");
-  let showTypeMenu = $state(false);
+  /** 筛选面板默认收起（参考 Bitwarden），点漏斗展开。 */
+  let showFilters = $state(false);
+  let folderFilter = $state("");
+  let typeFilter = $state("");
+  let trashOnly = $state(false);
+  let showNewMenu = $state(false);
 
+  const hasFilters = $derived(folderFilter !== "" || typeFilter !== "" || trashOnly);
+  const searching = $derived(query.trim() !== "");
+
+  const filterArgs = $derived({
+    ...(folderFilter === "" ? {} : { folderId: folderFilter === "none" ? null : folderFilter }),
+    ...(typeFilter === "" ? {} : { type: Number(typeFilter) as CipherType }),
+  });
+
+  /** 站点匹配条目（自动填充建议），收藏优先、名称次之。 */
   const siteMatches = $derived(
     activeUrl == null
       ? []
       : ciphers.filter((cipher) => cipher.deletedDate == null && cipherMatchesUrl(cipher, activeUrl)),
   );
 
-  const visible = $derived.by(() => {
-    if (scope === "site") {
-      const base = query.trim() === "" ? siteMatches : filterCiphers(siteMatches, { query });
-      // 当前站点列表按域名层级精度排序：精确匹配 > 父域 > 仅注册域相同。
-      return activeUrl == null ? sortCiphers(base) : sortCiphersForUrl(base, activeUrl);
-    }
+  const filteredSiteMatches = $derived(filterCiphers(siteMatches, filterArgs));
 
-    return sortCiphers(
-      filterCiphers(ciphers, {
-        query,
-        trash: scope === "trash",
-        favoritesOnly: scope === "favorites",
-        ...(folderId === "" ? {} : { folderId: folderId === "none" ? null : folderId }),
-      }),
-    );
-  });
+  /** 全部项目（回收站独立展示）。 */
+  const allItems = $derived(sortCiphers(filterCiphers(ciphers, { trash: false, ...filterArgs })));
 
-  const trashCount = $derived(ciphers.filter((cipher) => cipher.deletedDate != null).length);
+  /** 搜索时：单一搜索结果列表（应用筛选）。 */
+  const searchResults = $derived(sortCiphers(filterCiphers(ciphers, { query, trash: trashOnly, ...filterArgs })));
+
+  /** 回收站条目。 */
+  const trashItems = $derived(filterCiphers(ciphers, { trash: true }));
 </script>
+
+{#snippet itemList(ciphersToShow: CipherView[])}
+  <ul class="items">
+    {#each ciphersToShow as cipher (cipher.id)}
+      <li>
+        <button class="item" onclick={() => onOpen(cipher.id)}>
+          <CipherIcon {cipher} />
+          <span class="text">
+            <span class="name">
+              {cipher.name || "（无名称）"}
+              {#if cipher.favorite}<span class="star" title="已收藏">★</span>{/if}
+            </span>
+            <span class="subtitle">
+              {cipherSubtitle(cipher) || CIPHER_TYPE_LABELS[cipher.type]}
+            </span>
+          </span>
+          <span class="chevron">›</span>
+        </button>
+      </li>
+    {/each}
+  </ul>
+{/snippet}
 
 <div class="list-view">
   <div class="top-row">
-    <input
-      class="search"
-      type="text"
-      placeholder="搜索名称、用户名、网址、备注…"
-      bind:value={query}
-    />
+    <div class="search-wrap">
+      <input
+        class="search"
+        type="text"
+        placeholder="搜索名称、用户名、网址、备注…"
+        bind:value={query}
+      />
+      {#if searching}
+        <button class="clear" onclick={() => (query = "")} title="清除搜索" aria-label="清除搜索">
+          ×
+        </button>
+      {/if}
+    </div>
+
+    <button
+      class="filter-btn"
+      class:active={showFilters}
+      class:has-filter={hasFilters && !showFilters}
+      onclick={() => (showFilters = !showFilters)}
+      title="筛选"
+      aria-label="筛选"
+    >
+      <!-- 漏斗图标（内联 SVG） -->
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true">
+        <path d="M1.5 3h13M3.5 8h9M5.5 13h5" />
+      </svg>
+    </button>
+
     <div class="new-wrap">
-      {#if showTypeMenu}
+      {#if showNewMenu}
         <div class="type-menu">
           {#each Object.entries(CIPHER_TYPE_LABELS) as [value, label] (value)}
             <button
               onclick={() => {
-                showTypeMenu = false;
+                showNewMenu = false;
                 onCreate(Number(value) as CipherType);
               }}
             >
@@ -84,90 +127,129 @@
           {/each}
         </div>
       {/if}
-      <button class="new-btn" onclick={() => (showTypeMenu = !showTypeMenu)}>
-        ＋ 新增
-      </button>
+      <button class="new-btn" onclick={() => (showNewMenu = !showNewMenu)}>＋ 新增</button>
     </div>
   </div>
 
-  <div class="scopes">
-    {#if activeUrl != null}
-      <button class:active={scope === "site"} onclick={() => (scope = "site")}>
-        当前站点 {siteMatches.length > 0 ? `(${siteMatches.length})` : ""}
-      </button>
-    {/if}
-    <button class:active={scope === "all"} onclick={() => (scope = "all")}>全部</button>
-    <button class:active={scope === "favorites"} onclick={() => (scope = "favorites")}>收藏</button>
-    <button class:active={scope === "trash"} onclick={() => (scope = "trash")}>
-      回收站 {trashCount > 0 ? `(${trashCount})` : ""}
-    </button>
-  </div>
-
-  {#if scope !== "site" && folders.length > 0}
-    <select class="folder-filter" bind:value={folderId}>
-      <option value="">所有文件夹</option>
-      <option value="none">无文件夹</option>
-      {#each folders as folder (folder.id)}
-        <option value={folder.id}>{folder.name}</option>
-      {/each}
-    </select>
+  {#if showFilters}
+    <div class="filters">
+      <div class="field">
+        <label for="folder-filter">目录</label>
+        <select id="folder-filter" bind:value={folderFilter}>
+          <option value="">全部目录</option>
+          <option value="none">无目录</option>
+          {#each folders as folder (folder.id)}
+            <option value={folder.id}>{folder.name}</option>
+          {/each}
+        </select>
+      </div>
+      <div class="field">
+        <label for="type-filter">类型</label>
+        <select id="type-filter" bind:value={typeFilter}>
+          <option value="">全部类型</option>
+          {#each Object.entries(CIPHER_TYPE_LABELS) as [value, label] (value)}
+            <option value={value}>{label}</option>
+          {/each}
+        </select>
+      </div>
+      <label class="trash-toggle">
+        <input type="checkbox" bind:checked={trashOnly} />
+        回收站
+      </label>
+    </div>
   {/if}
 
-  {#if visible.length === 0}
-    <p class="empty">
-      {#if scope === "site"}
-        当前站点没有匹配的条目。
-      {:else if query.trim() !== ""}
-        没有匹配「{query}」的条目。
-      {:else if scope === "trash"}
-        回收站是空的。
-      {:else if scope === "favorites"}
-        还没有收藏任何条目。
+  <div class="scroll-area">
+    {#if trashOnly}
+      <h3 class="section">回收站</h3>
+      {#if trashItems.length === 0}
+        <p class="empty">回收站是空的。</p>
       {:else}
-        密码库是空的，点下方按钮新建第一个条目。
+        {@render itemList(trashItems)}
       {/if}
-    </p>
-  {:else}
-    <ul class="items">
-      {#each visible as cipher (cipher.id)}
-        <li>
-          <button class="item" onclick={() => onOpen(cipher.id)}>
-            <CipherIcon {cipher} />
-            <span class="text">
-              <span class="name">
-                {cipher.name || "（无名称）"}
-                {#if cipher.favorite}<span class="star" title="已收藏">★</span>{/if}
-              </span>
-              <span class="subtitle">{cipherSubtitle(cipher) || CIPHER_TYPE_LABELS[cipher.type]}</span>
-            </span>
-            <span class="chevron">›</span>
-          </button>
-        </li>
-      {/each}
-    </ul>
-  {/if}
+    {:else if searching}
+      <h3 class="section">搜索结果</h3>
+      {#if searchResults.length === 0}
+        <p class="empty">没有匹配「{query.trim()}」的条目。</p>
+      {:else}
+        {@render itemList(searchResults)}
+      {/if}
+    {:else}
+      {#if filteredSiteMatches.length > 0}
+        <h3 class="section">自动填充建议</h3>
+        {@render itemList(filteredSiteMatches)}
+      {/if}
 
+      <h3 class="section">全部项目</h3>
+      {#if allItems.length === 0}
+        <p class="empty">
+          {hasFilters ? "没有符合筛选条件的条目。" : "密码库是空的，点右上角「＋ 新增」创建第一条。"}
+        </p>
+      {:else}
+        {@render itemList(allItems)}
+      {/if}
+    {/if}
+  </div>
 </div>
 
 <style>
-  /* 撑满内容区：条目列表在内部滚动，外层（main）不再出现滚动条 */
   .list-view {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     height: 100%;
     min-height: 0;
   }
 
   .top-row {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     align-items: stretch;
   }
 
-  .search {
+  .search-wrap {
+    position: relative;
     flex: 1;
     min-width: 0;
+  }
+
+  .search {
+    width: 100%;
+    padding-right: 28px;
+  }
+
+  .clear {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 0 2px;
+  }
+
+  .filter-btn {
+    flex: none;
+    width: 34px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-subtle);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+  }
+
+  .filter-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .filter-btn.has-filter:not(.active) {
+    color: var(--accent);
   }
 
   .new-wrap {
@@ -225,50 +307,57 @@
     border-color: var(--border);
   }
 
-  .scopes {
+  .filters {
     display: flex;
-    gap: 4px;
+    gap: 8px;
+    align-items: flex-end;
     flex-wrap: wrap;
-  }
-
-  .scopes button {
-    padding: 3px 9px;
+    padding: 10px;
     border: 1px solid var(--border);
-    border-radius: 999px;
-    background: transparent;
+    border-radius: 8px;
+    background: var(--surface);
+  }
+
+  .filters .field {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .filters select {
+    font-size: 12px;
+  }
+
+  .trash-toggle {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
     color: var(--text-muted);
-    font-size: 11px;
-    font-family: inherit;
     cursor: pointer;
+    padding-bottom: 8px;
   }
 
-  .scopes button.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--accent-text);
+  .scroll-area {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
   }
 
-  .folder-filter {
-    font-size: 12px;
-  }
-
-  .empty {
-    margin: 16px 0;
-    text-align: center;
+  .section {
+    margin: 4px 0 2px;
+    font-size: 11px;
+    font-weight: 600;
     color: var(--text-muted);
-    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 
   .items {
     list-style: none;
-    margin: 0;
+    margin: 0 0 8px;
     padding: 0;
     display: flex;
     flex-direction: column;
-    /* 列表占满剩余高度并在内部滚动，避免双层滚动条 */
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
   }
 
   .item {
@@ -276,7 +365,7 @@
     align-items: center;
     gap: 10px;
     width: 100%;
-    padding: 7px 4px;
+    padding: 6px 4px;
     border: none;
     border-radius: 6px;
     background: transparent;
@@ -322,4 +411,10 @@
     flex: none;
   }
 
+  .empty {
+    margin: 12px 0;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
 </style>
