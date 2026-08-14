@@ -16,6 +16,7 @@ import {
   changeMasterPassword,
   clearPin,
   clearVault,
+  clearVaultData,
   hasPin,
   setPin,
   unlockWithPin,
@@ -307,6 +308,41 @@ describe("会话与活动时间", () => {
     await lock(storage);
 
     await expect(requireUserKey(storage)).rejects.toThrow(/锁定状态/);
+  });
+});
+
+describe("清空数据", () => {
+  it("清空条目与文件夹，保留密码库结构与主密码", async () => {
+    await createVault(storage, "master-pass1", { kdf: FAST_KDF });
+    const metaBefore = await getMeta(storage);
+    await writeVaultData(storage, {
+      ciphers: [
+        {
+          id: "c1",
+          type: 1,
+          name: "2.a|b|c",
+          favorite: false,
+          reprompt: 0,
+          creationDate: "2026-01-01T00:00:00.000Z",
+          revisionDate: "2026-01-01T00:00:00.000Z",
+        } as never,
+      ],
+      folders: [],
+    });
+
+    await clearVaultData(storage);
+
+    // 数据清空，但库本身（meta）与解锁状态保留。
+    expect(await readVaultData(storage)).toEqual({ ciphers: [], folders: [] });
+    expect(await getMeta(storage)).toEqual(metaBefore);
+    expect(await getStatus(storage)).toBe(VaultStatus.Unlocked);
+  });
+
+  it("锁定态清空被拒绝", async () => {
+    await createVault(storage, "master-pass1", { kdf: FAST_KDF });
+    await lock(storage);
+
+    await expect(clearVaultData(storage)).rejects.toThrow(/锁定状态/);
   });
 });
 

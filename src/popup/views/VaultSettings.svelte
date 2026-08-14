@@ -46,6 +46,11 @@
   let passwordChangeError = $state("");
   let passwordChangeBusy = $state(false);
 
+  let clearDataMode = $state(false);
+  let clearDataPassword = $state("");
+  let clearDataError = $state("");
+  let clearDataBusy = $state(false);
+
   let exportVerifyMode = $state(false);
   let exportPassword = $state("");
   let exportError = $state("");
@@ -165,6 +170,31 @@
       }
     } finally {
       passwordChangeBusy = false;
+    }
+  }
+
+  async function verifyAndClearData() {
+    if (clearDataPassword === "" || clearDataBusy) {
+      return;
+    }
+    clearDataBusy = true;
+    clearDataError = "";
+    try {
+      const verification = await sendMessage("vault:verifyPassword", {
+        masterPassword: clearDataPassword,
+      });
+      if (verification?.valid !== true) {
+        clearDataError = "主密码不正确";
+        return;
+      }
+
+      await sendMessage("vault:clearData");
+      clearDataMode = false;
+      clearDataPassword = "";
+      notice = "密码库数据已清空（条目与文件夹），主密码保持不变。";
+      onChanged();
+    } finally {
+      clearDataBusy = false;
     }
   }
 
@@ -530,6 +560,48 @@
     {/if}
 
     <button class="btn btn-secondary" onclick={lockNow}>立即锁定</button>
+
+    {#if clearDataMode}
+      <p class="alert">将删除全部条目与文件夹，密码库本身（主密码、PIN）保留。请输入主密码确认。</p>
+      <div class="field">
+        <label for="clear-data-pw">主密码</label>
+        <input
+          id="clear-data-pw"
+          type="password"
+          bind:value={clearDataPassword}
+          autocomplete="current-password"
+          onkeydown={(e) => {
+            if (e.key === "Enter") {
+              void verifyAndClearData();
+            }
+          }}
+        />
+      </div>
+      {#if clearDataError !== ""}
+        <p class="alert">{clearDataError}</p>
+      {/if}
+      <div class="row">
+        <button
+          class="btn btn-secondary"
+          onclick={() => {
+            clearDataMode = false;
+            clearDataPassword = "";
+            clearDataError = "";
+          }}
+        >
+          取消
+        </button>
+        <button
+          class="btn btn-danger"
+          onclick={() => void verifyAndClearData()}
+          disabled={clearDataBusy || clearDataPassword === ""}
+        >
+          {clearDataBusy ? "验证中…" : "确认清空"}
+        </button>
+      </div>
+    {:else}
+      <button class="btn btn-secondary" onclick={() => (clearDataMode = true)}>清空密码库数据</button>
+    {/if}
 
     {#if confirmingClear}
       <p class="alert">销毁后无法恢复。请输入主密码确认操作。</p>

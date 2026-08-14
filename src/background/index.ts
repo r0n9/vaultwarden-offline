@@ -22,6 +22,7 @@ import {
   unlock,
   changeMasterPassword,
   clearPin,
+  clearVaultData,
   hasPin,
   setPin,
   unlockWithPin,
@@ -209,6 +210,11 @@ registerHandlers({
 
   "vault:clear": async () => {
     await clearVault(vaultStorage);
+    return { status: await currentStatusAndRefresh() };
+  },
+
+  "vault:clearData": async () => {
+    await clearVaultData(vaultStorage);
     return { status: await currentStatusAndRefresh() };
   },
 

@@ -240,6 +240,15 @@ export async function verifyMasterPassword(
   }
 }
 
+/**
+ * 清空密码库数据：删除全部条目与文件夹，但**保留密码库本身**
+ * （主密码、KDF、PIN 不变），解锁后得到空库。
+ */
+export async function clearVaultData(storage: VaultStorage): Promise<void> {
+  await requireUserKey(storage);
+  await writeVaultData(storage, emptyVaultData());
+}
+
 /** 销毁本地密码库。不可恢复。 */
 export async function clearVault(storage: VaultStorage): Promise<void> {
   await lock(storage);

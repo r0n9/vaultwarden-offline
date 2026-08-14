@@ -73,6 +73,10 @@ export interface MessageContracts {
     request: undefined;
     response: { status: VaultStatus };
   };
+  "vault:clearData": {
+    request: undefined;
+    response: { status: VaultStatus };
+  };
   "vault:touch": {
     request: undefined;
     response: { status: VaultStatus };
