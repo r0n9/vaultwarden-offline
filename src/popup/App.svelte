@@ -150,9 +150,10 @@
       <span>密码库</span>
     </button>
     <button class:active={tab === "generator"} onclick={() => (tab = "generator")}>
-      <!-- 闪电：生成 -->
+      <!-- 闪电：生成（圈内，与设置图标的封闭容器语言统一） -->
       <svg class="tab-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M9.4 1.2 3.6 8.8h3.8l-1.4 6 5.9-7.4H8.1Z" />
+        <circle cx="8" cy="8" r="5.2" />
+        <path d="M9.6 3.4 5.4 8.4h2.5L6.7 12.6l4.2-5H8.4Z" />
       </svg>
       <span>生成器</span>
     </button>
