@@ -236,6 +236,11 @@
       </div>
     {/each}
 
+    <section class="panel">
+      <button class="btn btn-secondary" onclick={lockNow}>立即锁定</button>
+      <p class="hint">锁定后需重新输入主密码或 PIN 解锁，不会删除任何数据。</p>
+    </section>
+
     <section class="panel danger">
       <h2>危险区</h2>
 
@@ -292,8 +297,6 @@
           修改主密码
         </button>
       {/if}
-
-      <button class="btn btn-secondary" onclick={lockNow}>立即锁定</button>
 
       {#if clearDataMode}
         <p class="alert">将删除全部条目与文件夹，密码库本身（主密码、PIN）保留。请输入主密码确认。</p>
