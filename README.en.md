@@ -220,6 +220,10 @@ the encryption strength of the data is unchanged.
 
 ---
 
+## Friends
+
+- [LINUX DO](https://linux.do/)
+
 ---
 
 ## Support the Project
