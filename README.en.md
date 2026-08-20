@@ -232,7 +232,7 @@ If this project helps you, feel free to buy me a coffee ☕
 
 | WeChat | Alipay |
 |---|---|
-| <img src="public/sponsor/wechat.png" width="220" alt="WeChat"> | <img src="public/sponsor/alipay.png" width="220" alt="Alipay"> |
+| <img src="public/sponsor/wechat.jpeg" width="220" alt="WeChat"> | <img src="public/sponsor/alipay.jpeg" width="220" alt="Alipay"> |
 
 - Donations are pure gratitude — **no feature privileges**; this project stays
   free, ad-free, and membership-free forever.
